@@ -140,7 +140,7 @@
   .search-empty{ padding:14px 16px; font-size:13px; color:var(--text-light); }
 
   /* ---------- Shortcuts ---------- */
-  .shortcuts-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:18px; }
+  .shortcuts-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:18px; }
   .shortcut-card{
     background: var(--surface); border:1px solid var(--border); border-radius: 14px;
     padding: 12px 6px; display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -446,7 +446,8 @@ const ICONS = {
   pill: svgIcon('<g transform="rotate(-45 12 12)"><path d="M4.5 12a5 5 0 0 1 5-5h5a5 5 0 0 1 0 10h-5a5 5 0 0 1-5-5z"/><line x1="12" y1="7.3" x2="12" y2="16.7"/></g>'),
   messageSquare: svgIcon('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
   search: svgIcon('<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
-  package: svgIcon('<path d="M21 8.5l-9-5-9 5v7l9 5 9-5v-7z"/><path d="M3.3 8.2l8.7 5 8.7-5"/><path d="M12 21.2v-8"/>')
+  package: svgIcon('<path d="M21 8.5l-9-5-9 5v7l9 5 9-5v-7z"/><path d="M3.3 8.2l8.7 5 8.7-5"/><path d="M12 21.2v-8"/>'),
+  warning: svgIcon('<path d="M12 3.2L22 20H2L12 3.2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r="0.6" fill="currentColor"/>')
 };
 
 /* ============================================================
@@ -574,7 +575,18 @@ const DEFAULT_CATEGORIES = [
       { id: 'd10-4', text: 'お薬のお渡し準備が整いましたら、改めてご連絡（または通知）いたします。' },
       { id: 'd10-5', text: 'ご来局の際は、処方箋の『原本』とお薬手帳を忘れずにお持ちください' },
       { id: 'd10-6', text: '現在、流通が不安定なため、◯◯がすぐにご用意できない状況です（卸からの入手が難しい状況です）' },
-      { id: 'd10-7', text: 'お薬は今すぐ必要でしょうか。それとも、入荷まで数日お待ちいただくことは可能でしょうか' }
+      { id: 'd10-7', text: 'お薬は今すぐ必要でしょうか。それとも、入荷まで数日お待ちいただくことは可能でしょうか' },
+      { id: 'd10-8', text: 'あいにく現在こちらの店舗に在庫がございません。他店舗や卸から入手可能か、入荷できる時間を確認いたします' },
+      { id: 'd10-9', text: '本日◯時までにお手配（または折り返しのご連絡）が可能かお調べいたします' }
+    ]
+  },
+  {
+    id: 'complaint', name: 'クレーム・お叱りへの初期対応', icon: 'warning', order: 11, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd11-1', text: '（例：お渡しした薬の数が少ない、といったご指摘への初期対応）' },
+      { id: 'd11-2', text: '大変ご迷惑をおかけし、誠に申し訳ございません' },
+      { id: 'd11-3', text: 'お話しいただいた内容を正確に確認するため、一度状況をお調べしてもよろしいでしょうか' },
+      { id: 'd11-4', text: 'お調べのうえ、すぐに折り返しご連絡いたします。念のため、お電話番号を伺ってもよろしいでしょうか' }
     ]
   }
 ];
@@ -583,7 +595,9 @@ const SHORTCUTS = [
   { catId: 'side-effect', icon: 'pill', label: '副作用・お薬不足・飲み合わせ' },
   { catId: 'transfer', icon: 'shuffle', label: '担当者へ取り次ぐ時' },
   { catId: 'absence', icon: 'logout', label: '不在時対応' },
-  { catId: 'giji-shokai', icon: 'activity', label: '疑義照会（医師向け）' }
+  { catId: 'giji-shokai', icon: 'activity', label: '疑義照会（医師向け）' },
+  { catId: 'complaint', icon: 'warning', label: 'ご指摘・初期対応' },
+  { catId: 'stock-shortage', icon: 'package', label: '取り寄せ・在庫確認' }
 ];
 
 /* ============================================================
