@@ -215,9 +215,16 @@
   .phrase-choices{ display:flex; flex-direction:column; gap:8px; }
   .phrase-choice{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
   .phrase-del{ border:none; background:none; color: var(--danger); font-size:15px; padding:2px 4px; line-height:1; }
+  .phrase-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; }
+  .phrase-edit-btn{ border:none; background:none; color: var(--primary-deep); font-size:11.5px; font-weight:700; padding:2px 4px; }
+  .phrase-item.editing{ align-items:stretch; }
+  .phrase-edit-textarea{ width:100%; min-height:80px; padding:9px 12px; border-radius:10px; border:1px solid var(--primary); font-size:14px; font-family:inherit; resize:vertical; }
+  .phrase-edit-actions{ display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
 
-  .add-phrase-form{ display:flex; gap:8px; margin-top:6px; }
+  .add-phrase-form{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
   .add-phrase-form input{ flex:1; padding:9px 12px; border-radius:999px; border:1px solid var(--border); font-size:14px; }
+  .add-phrase-form textarea{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); font-size:14px; font-family:inherit; resize:vertical; min-height:64px; }
+  .add-phrase-form .btn{ align-self:flex-end; }
 
   .hours-form{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; background: var(--surface-2); padding:10px 12px; border-radius:12px; margin-bottom:12px; }
   .hours-form input[type=time]{ padding:6px 8px; border-radius:8px; border:1px solid var(--border); }
@@ -483,7 +490,7 @@ const DEFAULT_CATEGORIES = [
   {
     id: 'hours', name: '営業時間の問い合わせ', icon: 'clock', order: 2, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd2-2', text: '「薬局は何時までですか？」と聞かれた場合 → 「本日は◯◯時までの営業となっております」' }
+      { id: 'd2-2', text: '【「薬局は何時までですか？」と聞かれた場合】\n本日は◯◯時までの営業となっております' }
     ]
   },
   {
@@ -783,6 +790,7 @@ const state = {
   loaded: false,
   activeTab: 'basicRules',
   openCategoryId: null,
+  editingPhraseId: null,
   flow: { nodeStack: null, crumbs: [], leaf: null }
 };
 let seedAttempted = false;
@@ -1105,6 +1113,7 @@ function renderCategoryGrid(){
 function openCategory(catId){
   state.openCategoryId = catId;
   state.flow = { nodeStack: null, crumbs: [], leaf: null };
+  state.editingPhraseId = null;
   document.getElementById('situationsList').style.display = 'none';
   document.getElementById('situationsDetail').style.display = 'block';
   renderCategoryDetail(catId);
@@ -1144,7 +1153,7 @@ function renderCategoryDetail(catId){
 
   if (canEdit()){
     html += '<div class="add-phrase-form">' +
-      '<input type="text" id="newPhraseInput" placeholder="フレーズを追加...">' +
+      '<textarea id="newPhraseInput" placeholder="フレーズを追加...（複数行入力できます）" rows="3"></textarea>' +
       '<button class="btn btn-sm" id="addPhraseBtn">追加</button></div>';
   }
 
@@ -1171,9 +1180,6 @@ function renderCategoryDetail(catId){
       addPhrase(cat.id, input.value);
       input.value = '';
     };
-    document.getElementById('newPhraseInput').addEventListener('keydown', function(e){
-      if (e.key === 'Enter') addPhraseBtn.click();
-    });
   }
 
   if (cat.kind === 'flow') renderFlow(cat);
@@ -1210,13 +1216,47 @@ function renderPhraseListInto(cat){
     list.innerHTML = '<div class="empty-hint">' + (cat.kind === 'flow' ? '補足フレーズはまだありません。' : 'フレーズはまだ登録されていません。') + '</div>';
   } else {
     list.innerHTML = cat.phrases.map(function(p){
+      if (state.editingPhraseId === p.id){
+        return '<li class="phrase-item editing">' +
+          '<div class="txt">' +
+          '<textarea class="phrase-edit-textarea">' + h(p.text) + '</textarea>' +
+          '<div class="phrase-edit-actions">' +
+          '<button class="btn btn-sm" data-id="' + h(p.id) + '" data-act="save">保存</button>' +
+          '<button class="btn secondary btn-sm" data-id="' + h(p.id) + '" data-act="cancel">キャンセル</button>' +
+          '</div></div></li>';
+      }
       return '<li class="phrase-item"><div class="txt">' + renderPhraseBody(cat, p.text) + '</div>' +
-        (canEdit() ? '<button class="phrase-del" data-id="' + h(p.id) + '">✕</button>' : '') + '</li>';
+        (canEdit() ? '<div class="phrase-actions">' +
+          '<button class="phrase-edit-btn" data-id="' + h(p.id) + '">編集</button>' +
+          '<button class="phrase-del" data-id="' + h(p.id) + '">✕</button>' +
+          '</div>' : '') + '</li>';
     }).join('');
+
     list.querySelectorAll('.phrase-del').forEach(function(btn){
       btn.onclick = function(){
         const phraseObj = cat.phrases.find(function(p){ return p.id === btn.dataset.id; });
         if (phraseObj) deletePhrase(cat.id, phraseObj);
+      };
+    });
+    list.querySelectorAll('.phrase-edit-btn').forEach(function(btn){
+      btn.onclick = function(){
+        state.editingPhraseId = btn.dataset.id;
+        renderPhraseListInto(cat);
+      };
+    });
+    list.querySelectorAll('[data-act="cancel"]').forEach(function(btn){
+      btn.onclick = function(){
+        state.editingPhraseId = null;
+        renderPhraseListInto(cat);
+      };
+    });
+    list.querySelectorAll('[data-act="save"]').forEach(function(btn){
+      btn.onclick = async function(){
+        const li = btn.closest('li');
+        const textarea = li.querySelector('.phrase-edit-textarea');
+        const ok = await updatePhrase(cat.id, btn.dataset.id, textarea.value);
+        if (ok) state.editingPhraseId = null;
+        renderPhraseListInto(cat);
       };
     });
   }
@@ -1329,6 +1369,22 @@ async function deletePhrase(categoryId, phraseObj){
       phrases: arrayRemove(phraseObj)
     });
   }catch(e){ showToast('削除に失敗しました: ' + e.message, 'error'); }
+}
+
+async function updatePhrase(categoryId, phraseId, newText){
+  if (!canEdit()) return false;
+  newText = (newText || '').trim();
+  if (!newText){ showToast('内容を入力してください', 'error'); return false; }
+  const cat = findCategory(categoryId);
+  if (!cat) return false;
+  const newPhrases = (cat.phrases || []).map(function(p){
+    return p.id === phraseId ? { id: p.id, text: newText } : p;
+  });
+  try{
+    await updateDoc(doc(db, 'categories', categoryId), { phrases: newPhrases });
+    showToast('保存しました', 'success');
+    return true;
+  }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); return false; }
 }
 
 async function updateHours(categoryId, open, close){
