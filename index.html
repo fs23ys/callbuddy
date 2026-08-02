@@ -187,12 +187,12 @@
   .cat-section-title{ font-size:12.5px; font-weight:700; color: var(--text-light); margin:0 0 8px 2px; }
   .category-card{
     background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
-    padding: 16px 14px; text-align:left; border:none; display:flex; flex-direction:column; gap:6px;
+    padding: 14px; text-align:left; border:none; display:flex; flex-direction:row; align-items:center; gap:10px;
     position:relative;
   }
   .category-card:hover{ background: var(--surface-2); }
-  .category-card .icon-wrap{ color: var(--primary-dark); }
-  .category-card .icon-wrap svg{ width:26px; height:26px; }
+  .category-card .icon-wrap{ color: var(--primary-dark); flex-shrink:0; }
+  .category-card .icon-wrap svg{ width:22px; height:22px; }
   .category-card .name{ font-size:14px; font-weight:700; color:var(--text); }
   .category-card .count{ font-size:11.5px; color: var(--text-light); }
   .category-card.custom{ border:2px dashed var(--primary); }
@@ -212,6 +212,8 @@
   .phrase-item .txt{ flex:1; white-space:pre-wrap; }
   .phrase-heading{ font-weight:700; color: var(--primary-deep); font-size:15px; margin-bottom:8px; }
   .phrase-steps{ list-style:decimal; margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; }
+  .phrase-choices{ display:flex; flex-direction:column; gap:8px; }
+  .phrase-choice{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
   .phrase-del{ border:none; background:none; color: var(--danger); font-size:15px; padding:2px 4px; line-height:1; }
 
   .add-phrase-form{ display:flex; gap:8px; margin-top:6px; }
@@ -473,7 +475,8 @@ const DEFAULT_CATEGORIES = [
   {
     id: 'reception-first', name: '受付一次対応', icon: 'chatDots', order: 1, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd1-1', text: '【第一声（時間帯別）】\n午前中: おはようございます\n10:30以降: はい、◯◯薬局です' },
+      { id: 'd1-1', text: '【第一声（時間帯別）】\n・午前中: おはようございます\n・10:30以降: はい、◯◯薬局です' },
+      { id: 'd1-2', text: '【用件確認の前に（該当する場合）】\n・患者の場合: 恐れ入りますが、お名前と生年月日をお伺いしてもよろしいでしょうか\n・折り返し電話をくれた患者の場合: 折り返しのお電話ありがとうございます。\n・患者以外の場合: ご用件をお伺いしてもよろしいでしょうか／かしこまりました。' },
       { id: 'd1-3', text: '【用件確認の流れ】\nご用件をお伺いしてもよろしいでしょうか\n◯◯のお問い合わせですね（用件は必ず復唱する）' }
     ]
   },
@@ -484,11 +487,11 @@ const DEFAULT_CATEGORIES = [
     ]
   },
   {
-    id: 'giji-shokai', name: '疑義照会（医師向け）', icon: 'activity', order: 3, kind: 'phrases', isDefault: true,
+    id: 'giji-shokai', name: '疑義照会', icon: 'activity', order: 3, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd3-0a', text: '【枕詞編（いずれかを使用）】\nお世話になっております。◯◯薬局の◯◯でございます\nお忙しいところ恐れ入ります。◯◯薬局の◯◯と申します。' },
+      { id: 'd3-0a', text: '【枕詞編】\n・お世話になっております。◯◯薬局の◯◯でございます\n・お忙しいところ恐れ入ります。◯◯薬局の◯◯と申します。' },
       { id: 'd3-2', text: '【本題の流れ】\n◯◯様の処方の件でお伺いしたいのですが、今お時間よろしいでしょうか\n（ここで確認したい内容を簡潔に伝える）' },
-      { id: 'd3-3', text: '【締めの挨拶（いずれかを使用）】\nご確認いただきありがとうございました。よろしくお願いいたします。\nご対応ありがとうございました' }
+      { id: 'd3-3', text: '【締めの挨拶】\n・ご確認いただきありがとうございました。よろしくお願いいたします。お電話失礼いたします。\n・ご対応ありがとうございました。よろしくお願いいたします。お電話失礼いたします。' }
     ]
   },
   {
@@ -559,7 +562,7 @@ const DEFAULT_CATEGORIES = [
     ]
   },
   {
-    id: 'side-effect', name: '副作用・お薬不足・飲み合わせの問い合わせ', icon: 'pill', order: 9, kind: 'flow', isDefault: true,
+    id: 'side-effect', name: '副作用・飲み合わせの問い合わせ', icon: 'pill', order: 9, kind: 'flow', isDefault: true,
     phrases: [],
     flow: {
       start: 'intake',
@@ -726,14 +729,26 @@ const DEFAULT_CATEGORIES = [
       { id: 'd17-1', text: '【有効期限切れ】\n本日は処方箋をお持ちいただき、ありがとうございます\n本日は処方せんをお持ちして来局いただきありがとうございます。\n恐れ入りますが、処方箋の有効期限は発行日を含めて4日以内となっております\n申し訳ございませんが期限が切れておりますので、恐れ入りますが再度患者より医療機関にてご確認いただけますでしょうか\n（処方箋の期限切れについては、薬局から医療機関へ問い合わせはできない）' },
       { id: 'd17-2', text: '【キャンセル対応】\nかしこまりました、こちらの処方内容はキャンセルとして承ります\nご来局されない場合、お薬は破棄させていただいてもよろしいでしょうか' }
     ]
+  },
+  {
+    id: 'wholesale-request', name: '他薬局への分譲依頼', icon: 'package', order: 18, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd18-1', text: 'お世話になっております。◯◯薬局の◯◯と申します。\n恐れ入りますが、◯◯というお薬を少量分けていただくことは可能でしょうか\n数量は◯◯個ほど不足しておりまして、お手数をおかけしますがご検討いただけますと幸いです' }
+    ]
+  },
+  {
+    id: 'supplier-check', name: '卸への入荷確認', icon: 'package', order: 19, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd19-1', text: 'お世話になっております。◯◯薬局です。\n◯◯というお薬の入荷予定はございますでしょうか\n入荷時期が分かりましたら教えていただけますでしょうか' }
+    ]
   }
 ];
 
 const SHORTCUTS = [
-  { catId: 'side-effect', icon: 'pill', label: '副作用・お薬不足・飲み合わせ' },
+  { catId: 'side-effect', icon: 'pill', label: '副作用・飲み合わせ確認' },
   { catId: 'transfer', icon: 'shuffle', label: '担当者へ取り次ぐ時' },
   { catId: 'absence', icon: 'logout', label: '不在時対応' },
-  { catId: 'giji-shokai', icon: 'activity', label: '疑義照会（医師向け）' },
+  { catId: 'giji-shokai', icon: 'activity', label: '疑義照会' },
   { catId: 'complaint', icon: 'warning', label: 'ご指摘・初期対応' },
   { catId: 'stock-shortage', icon: 'package', label: '取り寄せ・在庫確認' }
 ];
@@ -742,11 +757,11 @@ const CATEGORY_GROUPS = [
   { title: '患者様からの問い合わせ', icon: 'inbox', sections: [
     { title: '受付・基本問い合わせ', ids: ['reception-first', 'hours'] },
     { title: 'お薬・体調のご相談', ids: ['missed-dose', 'pregnancy', 'otc-interaction', 'side-effect', 'home-care'] },
-    { title: '手続き・在庫確認', ids: ['prescription-expiry', 'stock-shortage'] },
     { title: 'ご指摘・困った時の対応', ids: ['complaint', 'hang-up'] }
   ]},
   { title: '患者様への連絡', icon: 'outbox', sections: [
-    { title: 'ご連絡・お知らせ', ids: ['outbound-call', 'stock-shortage'] },
+    { title: 'ご連絡・お知らせ', ids: ['outbound-call'] },
+    { title: '手続き・在庫確認', ids: ['prescription-expiry', 'stock-shortage'] },
     { title: 'トラブル・お詫び対応', ids: ['apology'] },
     { title: '折り返し対応', ids: ['message'] }
   ]},
@@ -1034,11 +1049,9 @@ function updateSearchResults(query){
    カテゴリ一覧・詳細
    ============================================================ */
 function renderCategoryCard(cat){
-  const count = (cat.phrases || []).length + (cat.kind === 'flow' ? 1 : 0);
   return '<button class="category-card' + (cat.isDefault ? '' : ' custom') + '" data-cat="' + h(cat.id) + '">' +
     '<span class="icon-wrap">' + (ICONS[cat.icon] || ICONS.messageSquare) + '</span>' +
     '<span class="name">' + h(cat.name) + '</span>' +
-    '<span class="count">' + count + '件の内容</span>' +
     '</button>';
 }
 
@@ -1175,10 +1188,15 @@ function renderPhraseBody(cat, rawText){
     heading = lines[0].trim();
     items = lines.slice(1);
   }
+  const isChoice = items.length > 0 && items[0].trim().indexOf('・') === 0;
   let html = '';
   if (heading) html += '<div class="phrase-heading">' + h(heading) + '</div>';
   if (items.length > 1){
-    html += '<ol class="phrase-steps">' + items.map(function(l){ return '<li>' + h(l) + '</li>'; }).join('') + '</ol>';
+    if (isChoice){
+      html += '<div class="phrase-choices">' + items.map(function(l){ return '<div class="phrase-choice">' + h(l.trim().replace(/^・/, '')) + '</div>'; }).join('') + '</div>';
+    } else {
+      html += '<ol class="phrase-steps">' + items.map(function(l){ return '<li>' + h(l) + '</li>'; }).join('') + '</ol>';
+    }
   } else {
     html += h(items[0] || '');
   }
