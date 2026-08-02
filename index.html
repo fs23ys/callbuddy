@@ -214,6 +214,11 @@
   .phrase-steps{ list-style:decimal; margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; }
   .phrase-choices{ display:flex; flex-direction:column; gap:8px; }
   .phrase-choice{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .phrase-preamble{ margin-bottom:10px; }
+  .phrase-branches{ display:flex; flex-direction:column; gap:10px; }
+  .phrase-branch{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .phrase-branch-badge{ display:inline-block; background: var(--accent); color:#8a4b12; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:999px; margin-bottom:8px; }
+  .phrase-branch-body{ font-size:14px; line-height:1.7; }
   .phrase-del{ border:none; background:none; color: var(--danger); font-size:15px; padding:2px 4px; line-height:1; }
   .phrase-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; }
   .phrase-edit-btn{ border:none; background:none; color: var(--primary-deep); font-size:11.5px; font-weight:700; padding:2px 4px; }
@@ -666,29 +671,10 @@ const DEFAULT_CATEGORIES = [
     ]
   },
   {
-    id: 'outbound-call', name: 'こちらから電話する時', icon: 'callOut', order: 12, kind: 'flow', isDefault: true,
-    phrases: [],
-    flow: {
-      start: 'opening',
-      nodes: {
-        opening: {
-          steps: [
-            'お世話になっております。わたくし◯◯薬局の◯◯と申します。',
-            '◯◯様につないでいただけますか？'
-          ],
-          options: [
-            { label: '担当者が不在だった', next: 'absent' }
-          ]
-        },
-        absent: {
-          question: '担当者が不在の場合',
-          steps: [
-            '伝言を言づけてもよろしいでしょうか',
-            '◯◯このようにお伝えいただけないでしょうか'
-          ]
-        }
-      }
-    }
+    id: 'outbound-call', name: 'こちらから電話する時', icon: 'callOut', order: 12, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd12-1', text: 'お世話になっております。わたくし◯◯薬局の◯◯と申します。\n◯◯様につないでいただけますか？\n◆担当者が不在だった場合\n伝言を言づけてもよろしいでしょうか\n◯◯このようにお伝えいただけないでしょうか' }
+    ]
   },
   {
     id: 'home-care', name: 'かかりつけ薬剤師・在宅介入患者からの電話', icon: 'home', order: 13, kind: 'flow', isDefault: true,
@@ -1194,10 +1180,38 @@ function renderPhraseBody(cat, rawText){
     heading = lines[0].trim();
     items = lines.slice(1);
   }
-  const isChoice = items.length > 0 && items[0].trim().indexOf('・') === 0;
+  const hasBranches = items.some(function(l){ return l.trim().indexOf('◆') === 0; });
+  const isChoice = !hasBranches && items.length > 0 && items[0].trim().indexOf('・') === 0;
   let html = '';
   if (heading) html += '<div class="phrase-heading">' + h(heading) + '</div>';
-  if (items.length > 1){
+  if (hasBranches){
+    const preamble = [];
+    const branches = [];
+    let current = null;
+    items.forEach(function(l){
+      const t = l.trim();
+      if (!t) return;
+      if (t.indexOf('◆') === 0){
+        current = { label: t.replace(/^◆/, ''), lines: [] };
+        branches.push(current);
+      } else if (current){
+        current.lines.push(t);
+      } else {
+        preamble.push(t);
+      }
+    });
+    if (preamble.length > 1){
+      html += '<ol class="phrase-steps">' + preamble.map(function(l){ return '<li>' + h(l) + '</li>'; }).join('') + '</ol>';
+    } else if (preamble.length === 1){
+      html += '<div class="phrase-preamble">' + h(preamble[0]) + '</div>';
+    }
+    html += '<div class="phrase-branches">' + branches.map(function(b){
+      return '<div class="phrase-branch">' +
+        '<span class="phrase-branch-badge">' + h(b.label) + '</span>' +
+        '<div class="phrase-branch-body">' + b.lines.map(h).join('<br>') + '</div>' +
+        '</div>';
+    }).join('') + '</div>';
+  } else if (items.length > 1){
     if (isChoice){
       html += '<div class="phrase-choices">' + items.map(function(l){ return '<div class="phrase-choice">' + h(l.trim().replace(/^・/, '')) + '</div>'; }).join('') + '</div>';
     } else {
