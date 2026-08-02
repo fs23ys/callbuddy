@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<!--
+  CallBuddy - 調剤薬局 電話応対マニュアルツール
+  ============================================
+  【セットアップ手順】
+  1. https://console.firebase.google.com/ で新規プロジェクトを作成する
+  2. 左メニュー「構築」→「Firestore Database」を開き、データベースを作成する（本番環境モードでOK）
+  3. 左メニュー「構築」→「Authentication」→「Sign-in method」で「Google」を有効化する
+  4. プロジェクト設定（歯車アイコン）→「マイアプリ」→ウェブアプリを追加し、表示された
+     firebaseConfig の値を、このファイル内の「firebaseConfig」プレースホルダー部分に貼り付ける
+     （このファイル内を「firebaseConfig」で検索すると該当箇所にすぐ移動できます）
+  5. Firestore の「ルール」タブに、下記のセキュリティルールを貼り付けて公開する
+
+  --- Firestore セキュリティルール（コピーして使用） ---
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /categories/{categoryId} {
+        allow read: if true;
+        allow write: if request.auth != null;
+
+        // 特定のスタッフのみ編集を許可したい場合は、上の allow write を
+        // コメントアウトして下記を使う（許可したいメールアドレスを列挙する）
+        // allow write: if request.auth != null &&
+        //   request.auth.token.email in [
+        //     'staff1@example.com',
+        //     'staff2@example.com'
+        //   ];
+      }
+    }
+  }
+  ------------------------------------------------------
+
+  このアプリは HTML/CSS/JS のみで完結しており、ビルド不要でそのまま
+  GitHub Pages 等の静的ホスティングに置くだけで動作します。
+-->
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="theme-color" content="#eaf4fb">
+<title>CallBuddy - 電話応対マニュアル</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%93%9E</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #eef5f9;
+    --surface: #ffffff;
+    --surface-2: #f5fafd;
+    --border: #dbe8f0;
+    --text: #33475b;
+    --text-light: #6b8299;
+    --primary: #9ecfe8;
+    --primary-dark: #5b9bd5;
+    --primary-deep: #3f7cad;
+    --accent: #ffd8b8;
+    --accent-dark: #f0a868;
+    --ok-bg: #d9f5df;
+    --ok-text: #2e7d4f;
+    --ng-bg: #ffe1e4;
+    --ng-text: #c1495a;
+    --danger: #e57373;
+    --shadow: 0 2px 10px rgba(90,130,160,0.12);
+    --radius: 16px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(180deg, #eef5f9 0%, #f4f9fb 100%);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app{ max-width: 920px; margin: 0 auto; padding: 12px 14px 60px; }
+  button{ font-family: inherit; cursor: pointer; }
+  input, textarea{ font-family: inherit; }
+
+  /* ---------- Header ---------- */
+  .app-header{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; padding: 10px 4px 14px;
+  }
+  .app-title{ display:flex; align-items:center; gap:10px; }
+  .app-title .logo{
+    font-size: 26px; width:44px; height:44px; display:flex; align-items:center; justify-content:center;
+    background: var(--primary); border-radius: 14px; box-shadow: var(--shadow);
+  }
+  .app-title h1{ margin:0; font-size: 20px; font-weight:900; color: var(--primary-deep); letter-spacing:0.5px; }
+  .app-title p{ margin:0; font-size:11px; color: var(--text-light); }
+
+  .auth-box{ display:flex; align-items:center; gap:8px; }
+  .btn{
+    border:none; border-radius: 999px; padding: 8px 16px; font-size:13px; font-weight:700;
+    background: var(--primary); color:#fff; box-shadow: var(--shadow); transition: transform .1s ease, opacity .15s;
+  }
+  .btn:hover{ opacity:.92; }
+  .btn:active{ transform: scale(.97); }
+  .btn.secondary{ background: var(--surface); color: var(--primary-deep); border:1px solid var(--border); }
+  .btn.danger{ background: var(--danger); }
+  .btn.ghost{ background: transparent; color: var(--text-light); box-shadow:none; padding:6px 10px; }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn-sm{ padding:5px 12px; font-size:12px; }
+
+  .user-chip{ display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:4px 10px 4px 4px; box-shadow: var(--shadow); }
+  .user-chip img{ width:24px; height:24px; border-radius:50%; }
+  .user-chip span{ font-size:12px; font-weight:500; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ---------- Search ---------- */
+  .search-wrap{ position:relative; margin-bottom:14px; }
+  .search-box{
+    display:flex; align-items:center; gap:8px; background: var(--surface);
+    border: 2px solid var(--primary); border-radius: 999px; padding: 10px 16px;
+    box-shadow: var(--shadow);
+  }
+  .search-box .icon{ font-size:18px; }
+  .search-box input{
+    flex:1; border:none; outline:none; font-size:16px; background:transparent; color:var(--text);
+  }
+  .search-box .clear-btn{ border:none; background:none; color:var(--text-light); font-size:16px; padding:2px 6px; display:none; }
+  .search-results{
+    position:absolute; left:0; right:0; top:calc(100% + 6px); background:var(--surface);
+    border-radius: 14px; box-shadow: 0 8px 24px rgba(70,100,130,0.18); z-index: 50; overflow:hidden;
+    display:none; max-height: 340px; overflow-y:auto;
+  }
+  .search-results.show{ display:block; }
+  .search-result-item{ display:block; width:100%; text-align:left; padding:10px 16px; border:none; background:none; border-bottom:1px solid var(--border); }
+  .search-result-item:last-child{ border-bottom:none; }
+  .search-result-item:hover{ background: var(--surface-2); }
+  .search-result-item .cat{ font-size:12px; color: var(--primary-deep); font-weight:700; }
+  .search-result-item .snip{ font-size:13px; color: var(--text); margin-top:2px; }
+  .search-empty{ padding:14px 16px; font-size:13px; color:var(--text-light); }
+
+  /* ---------- Shortcuts ---------- */
+  .shortcuts-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:18px; }
+  .shortcut-card{
+    background: var(--surface); border:1px solid var(--border); border-radius: 14px;
+    padding: 12px 6px; display:flex; flex-direction:column; align-items:center; gap:6px;
+    box-shadow: var(--shadow); text-align:center;
+  }
+  .shortcut-card .emoji{ font-size:24px; }
+  .shortcut-card span{ font-size:11.5px; font-weight:700; color: var(--text); line-height:1.3; }
+  .shortcut-card:hover{ background: var(--surface-2); }
+
+  /* ---------- Tabs ---------- */
+  .tabs{ display:flex; gap:8px; margin-bottom:14px; background: var(--surface-2); padding:5px; border-radius: 999px; }
+  .tab-btn{ flex:1; border:none; background:transparent; padding:10px 8px; border-radius:999px; font-weight:700; font-size:14px; color: var(--text-light); }
+  .tab-btn.active{ background: var(--primary-dark); color:#fff; box-shadow: var(--shadow); }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  /* ---------- Cards / sections ---------- */
+  .card{ background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 14px; }
+  .card h3{ margin:0 0 10px; font-size:15px; color: var(--primary-deep); display:flex; align-items:center; gap:6px; }
+  .card h3 .num{ background:var(--primary); color:#fff; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; }
+
+  .cushion-list{ display:flex; flex-wrap:wrap; gap:8px; }
+  .cushion-chip{ background: var(--surface-2); border:1px solid var(--border); padding:7px 14px; border-radius: 999px; font-size:13.5px; }
+
+  table.replace-table{ width:100%; border-collapse: collapse; font-size:13.5px; }
+  .table-scroll{ overflow-x:auto; }
+  table.replace-table th, table.replace-table td{ padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+  table.replace-table th{ color:var(--text-light); font-weight:700; font-size:12px; }
+  .ng-text{ background: var(--ng-bg); color: var(--ng-text); padding:3px 8px; border-radius:8px; display:inline-block; }
+  .ok-text{ background: var(--ok-bg); color: var(--ok-text); padding:3px 8px; border-radius:8px; display:inline-block; }
+  .table-note{ font-size:12px; color: var(--text-light); margin-top:4px; }
+
+  .basic-phrase-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .basic-phrase-list li{ background: var(--surface-2); border-radius:10px; padding:9px 12px; font-size:13.5px; }
+  .basic-phrase-list li b{ color: var(--primary-deep); }
+
+  /* ---------- Category grid ---------- */
+  .category-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; }
+  .category-card{
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 16px 14px; text-align:left; border:none; display:flex; flex-direction:column; gap:6px;
+    position:relative;
+  }
+  .category-card:hover{ background: var(--surface-2); }
+  .category-card .emoji{ font-size:26px; }
+  .category-card .name{ font-size:14px; font-weight:700; color:var(--text); }
+  .category-card .count{ font-size:11.5px; color: var(--text-light); }
+  .category-card.custom{ border:2px dashed var(--primary); }
+  .add-category-card{
+    background: var(--surface-2); border:2px dashed var(--primary-dark); border-radius: var(--radius);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding: 16px;
+    color: var(--primary-deep); font-weight:700; font-size:13px; min-height:96px;
+  }
+
+  /* ---------- Category detail ---------- */
+  .detail-header{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .detail-header h2{ font-size:17px; margin:0; flex:1; color: var(--primary-deep); }
+  .back-btn{ border:none; background: var(--surface); border:1px solid var(--border); border-radius:999px; padding:8px 14px; font-size:13px; font-weight:700; color:var(--text); box-shadow: var(--shadow); }
+
+  .phrase-list{ list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .phrase-item{ display:flex; align-items:flex-start; gap:8px; background: var(--surface-2); padding:10px 12px; border-radius:12px; font-size:14px; line-height:1.5; }
+  .phrase-item .txt{ flex:1; white-space:pre-wrap; }
+  .phrase-del{ border:none; background:none; color: var(--danger); font-size:15px; padding:2px 4px; line-height:1; }
+
+  .add-phrase-form{ display:flex; gap:8px; margin-top:6px; }
+  .add-phrase-form input{ flex:1; padding:9px 12px; border-radius:999px; border:1px solid var(--border); font-size:14px; }
+
+  .hours-form{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; background: var(--surface-2); padding:10px 12px; border-radius:12px; margin-bottom:12px; }
+  .hours-form input[type=time]{ padding:6px 8px; border-radius:8px; border:1px solid var(--border); }
+  .hours-form label{ font-size:12px; color:var(--text-light); }
+
+  .empty-hint{ font-size:13px; color: var(--text-light); padding:10px 4px; }
+
+  /* ---------- Flow ---------- */
+  .flow-box{ background: var(--surface-2); border-radius: 14px; padding:16px; margin-bottom:14px; }
+  .flow-breadcrumb{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .flow-crumb{ font-size:12px; background:var(--primary); color:#fff; padding:4px 10px; border-radius:999px; }
+  .flow-question{ font-weight:700; font-size:14px; margin-bottom:10px; color: var(--primary-deep); }
+  .flow-phrase{ background:#fff; border-left:4px solid var(--primary-dark); padding:10px 14px; border-radius:8px; font-size:14.5px; margin-bottom:12px; }
+  .flow-options{ display:flex; flex-direction:column; gap:8px; }
+  .flow-option-btn{ text-align:left; background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:14px; font-weight:700; color: var(--text); box-shadow: var(--shadow); }
+  .flow-option-btn:hover{ background: var(--primary); color:#fff; }
+  .flow-steps{ list-style:decimal; padding-left:20px; margin:0; display:flex; flex-direction:column; gap:10px; }
+  .flow-steps li{ background:#fff; padding:10px 12px; border-radius:8px; font-size:14px; }
+  .flow-restart{ margin-top:12px; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(40,60,80,0.45); display:none; align-items:center; justify-content:center; z-index:200; padding:16px; }
+  .modal-overlay.show{ display:flex; }
+  .modal{ background:#fff; border-radius:18px; padding:22px; width:100%; max-width:440px; max-height:86vh; overflow-y:auto; }
+  .modal h3{ margin-top:0; color: var(--primary-deep); }
+  .modal label{ font-size:12.5px; color:var(--text-light); display:block; margin:12px 0 4px; }
+  .modal input[type=text], .modal textarea{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); font-size:14px; resize:vertical; }
+  .modal textarea{ min-height:110px; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+
+  /* ---------- Setup screen ---------- */
+  .setup-screen{ background:#fff; border-radius: var(--radius); box-shadow: var(--shadow); padding:26px 22px; margin-top:20px; }
+  .setup-screen h2{ color: var(--primary-deep); }
+  .setup-screen pre{ background:#f3f8fb; border-radius:10px; padding:14px; font-size:12px; overflow-x:auto; white-space:pre-wrap; }
+  .setup-screen ol{ font-size:14px; line-height:1.9; }
+  .setup-screen code{ background:#eef5f9; padding:2px 6px; border-radius:6px; }
+
+  /* ---------- Toast ---------- */
+  .toast-container{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%); z-index:400; display:flex; flex-direction:column; gap:8px; align-items:center; width:100%; padding:0 12px; }
+  .toast{ background: var(--text); color:#fff; padding:10px 18px; border-radius:999px; font-size:13px; box-shadow: 0 4px 14px rgba(0,0,0,0.2); max-width:92vw; }
+  .toast.error{ background: var(--danger); }
+  .toast.success{ background: #4caf7d; }
+
+  .footer-actions{ display:flex; justify-content:center; margin-top:18px; }
+  .lock-note{ font-size:12px; color: var(--text-light); text-align:center; margin-top:6px; }
+
+  @media (max-width: 560px){
+    .shortcuts-grid{ grid-template-columns: repeat(2, 1fr); }
+    .category-grid{ grid-template-columns: 1fr; }
+    .app-title h1{ font-size:18px; }
+    .user-chip span{ max-width:70px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="app-header">
+    <div class="app-title">
+      <div class="logo">📞</div>
+      <div>
+        <h1>CallBuddy</h1>
+        <p>調剤薬局 電話応対マニュアル</p>
+      </div>
+    </div>
+    <div class="auth-box" id="authBox"></div>
+  </header>
+
+  <div id="mainContent" style="display:none;">
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <span class="icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="キーワードで検索（例: 謝罪 / 不在 / 疑義照会）" autocomplete="off">
+        <button class="clear-btn" id="searchClearBtn">✕</button>
+      </div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="shortcuts-grid" id="shortcutsGrid"></div>
+
+    <div class="tabs">
+      <button class="tab-btn" data-tab="basicRules">基本ルール</button>
+      <button class="tab-btn" data-tab="situations">シチュエーション一覧</button>
+    </div>
+
+    <!-- 基本ルール -->
+    <div class="panel" id="panel-basicRules">
+      <div class="card">
+        <h3><span class="num">1</span>クッション言葉</h3>
+        <div class="cushion-list">
+          <span class="cushion-chip">恐れ入りますが</span>
+          <span class="cushion-chip">失礼ですが</span>
+          <span class="cushion-chip">申し訳ございませんが</span>
+          <span class="cushion-chip">お差し支えなければ</span>
+          <span class="cushion-chip">お手数をおかけしますが</span>
+          <span class="cushion-chip">よろしければ</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">2</span>言い換え表（NG→OK）</h3>
+        <div class="table-scroll">
+        <table class="replace-table">
+          <thead><tr><th>NG</th><th>OK</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ng-text">うちの薬局</span></td><td><span class="ok-text">わたくしどもの薬局</span></td></tr>
+            <tr><td><span class="ng-text">◯◯さんですか</span></td><td><span class="ok-text">失礼ですが／恐れ入りますが、◯◯様でいらっしゃいますか</span></td></tr>
+            <tr><td><span class="ng-text">こっちへ来てください</span></td><td><span class="ok-text">恐れ入りますが、こちらへお越しいただけますか</span></td></tr>
+            <tr><td><span class="ng-text">知っていますか</span></td><td><span class="ok-text">ご存知でいらっしゃいますか</span></td></tr>
+            <tr>
+              <td><span class="ng-text">わかりません</span></td>
+              <td>
+                <span class="ok-text">申し訳ございませんが、こちらでは分かりかねます</span>
+                <div class="table-note">→ パターン1: お調べして折り返す　／　パターン2: 担当者に代わる</div>
+              </td>
+            </tr>
+            <tr><td><span class="ng-text">ちょっとお待ちください</span></td><td><span class="ok-text">恐れ入りますが／申し訳ございませんが、少々お待ちください。もう少しお待ちいただいてもよろしいでしょうか</span></td></tr>
+            <tr><td><span class="ng-text">具合、大丈夫ですか</span></td><td><span class="ok-text">体調はいかがでしょうか／お加減いかがでしょうか</span></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">3</span>確認表現の使い分け</h3>
+        <div class="table-scroll">
+        <table class="replace-table">
+          <thead><tr><th>場面</th><th>表現</th></tr></thead>
+          <tbody>
+            <tr><td>現在の確認</td><td>〜でよろしいでしょうか</td></tr>
+            <tr><td>過去の記憶の確認</td><td>〜でよろしかったでしょうか</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">4</span>電話応対の基本フレーズ</h3>
+        <ul class="basic-phrase-list">
+          <li>さようでございますね</li>
+          <li>「〜が」「〜で」で文を止めない</li>
+          <li>お伝えいただけないでしょうか</li>
+          <li>ご対応ありがとうございます</li>
+          <li><b>午前の第一声：</b>おはようございます</li>
+          <li><b>10:30以降の第一声：</b>お電話ありがとうございます</li>
+          <li><b>用件確認：</b>ご用件をお伺いしてもよろしいでしょうか</li>
+          <li><b>用件は必ず復唱する</b>（例:「◯◯のお問い合わせですね」）</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- シチュエーション一覧 -->
+    <div class="panel" id="panel-situations">
+      <div id="situationsList">
+        <div class="category-grid" id="categoryGrid"></div>
+      </div>
+      <div id="situationsDetail" style="display:none;"></div>
+
+      <div class="footer-actions" id="resetWrap" style="display:none;">
+        <button class="btn ghost" id="resetBtn">⚠ すべて初期状態にリセット</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="setupScreenWrap"></div>
+
+</div>
+
+<!-- 新規カテゴリ追加モーダル -->
+<div class="modal-overlay" id="addCategoryModal">
+  <div class="modal">
+    <h3>新規カテゴリを追加</h3>
+    <label>カテゴリ名</label>
+    <input type="text" id="newCategoryName" placeholder="例: 配送・宅配に関する問い合わせ">
+    <label>フレーズ（1行に1つずつ入力・空欄でも可）</label>
+    <textarea id="newCategoryPhrases" placeholder="恐れ入りますが、〜&#10;かしこまりました、〜"></textarea>
+    <div class="modal-actions">
+      <button class="btn secondary" id="cancelAddCategory">キャンセル</button>
+      <button class="btn" id="confirmAddCategory">追加する</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============================================================ -->
+<!-- Firebase SDK (CDN / モジュール形式) -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+import {
+  getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, getDocs,
+  onSnapshot, query, orderBy, writeBatch, arrayUnion, arrayRemove
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+
+/* ============================================================
+   ★★★★★ ここに Firebase コンソールで取得した設定値を貼り付けてください ★★★★★
+   Firebaseコンソール → プロジェクト設定 → マイアプリ → SDKの設定と構成 で確認できます
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyC9iaAHQA2evVWUyd1c7ucZXATilKRJLV8",
+  authDomain: "callbuddy-905aa.firebaseapp.com",
+  projectId: "callbuddy-905aa",
+  storageBucket: "callbuddy-905aa.firebasestorage.app",
+  messagingSenderId: "157367955732",
+  appId: "1:157367955732:web:725d071a5fa3a2cf575201"
+};
+/* ============================================================ */
+
+/* 編集を許可する特定のGoogleアカウントを絞りたい場合はここにメールアドレスを追加する
+   （空配列の場合はログインした全員が編集可能。あくまで表示上の制御であり、
+   実際のセキュリティは Firestore ルール側で担保すること） */
+const ALLOWED_EMAILS = [];
+
+/* ============================================================
+   初期データ（Firestoreが空の場合に自動で登録される既定カテゴリ）
+   ============================================================ */
+const DEFAULT_CATEGORIES = [
+  {
+    id: 'reception-first', name: '受付一次対応', emoji: '☎️', order: 1, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd1-1', text: 'おはようございます（午前中の第一声）' },
+      { id: 'd1-2', text: 'お電話ありがとうございます（10:30以降の第一声）' },
+      { id: 'd1-3', text: 'ご用件をお伺いしてもよろしいでしょうか' },
+      { id: 'd1-4', text: '◯◯のお問い合わせですね（用件は必ず復唱する）' }
+    ]
+  },
+  {
+    id: 'hours', name: '受付時間・営業時間の問い合わせ', emoji: '🕐', order: 2, kind: 'phrases', isDefault: true,
+    businessHours: { open: '09:00', close: '18:00' },
+    phrases: [
+      { id: 'd2-1', text: '{open}〜{close}のお問い合わせですね。お待ちしております。' },
+      { id: 'd2-2', text: '「薬局は何時までですか？」と聞かれた場合 → 「本日は{close}までの営業となっております」' }
+    ]
+  },
+  {
+    id: 'giji-shokai', name: '疑義照会（医師向け）', emoji: '🩺', order: 3, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd3-1', text: 'お忙しいところ恐れ入ります。◯◯薬局の◯◯と申します。' },
+      { id: 'd3-2', text: '◯◯様の処方の件でお伺いしたいのですが、今お時間よろしいでしょうか' },
+      { id: 'd3-3', text: 'お考えがあって処方されているのでしょうか' },
+      { id: 'd3-4', text: '（ここで確認したい内容を簡潔に伝える）' },
+      { id: 'd3-5', text: 'ご確認いただきありがとうございました。よろしくお願いいたします。' }
+    ]
+  },
+  {
+    id: 'absence', name: '不在時対応', emoji: '🚶', order: 4, kind: 'flow', isDefault: true,
+    phrases: [],
+    flow: {
+      start: 'status',
+      nodes: {
+        status: {
+          question: '相手（担当者）の状況は？',
+          options: [
+            { label: '離席', text: '◯◯は、今席を外しております', next: 'action' },
+            { label: '外出', text: '◯◯は、外出しております', next: 'action' },
+            { label: '対応中・電話中', text: '◯◯は、ただいま他の対応をしておりまして', next: 'action' }
+          ]
+        },
+        action: {
+          question: 'どのように対応する？',
+          options: [
+            { label: '戻り次第、折り返す', next: 'callback' },
+            { label: '自分が代わりに用件を伺う', text: 'よろしければ／お差し支えなければ、わたくしが代わりにお電話伺いしましょうか', next: null },
+            { label: '伝言を預かる', next: 'message' }
+          ]
+        },
+        callback: {
+          question: '折り返し対応の流れ',
+          steps: [
+            '念のため、◯◯様のお電話番号を伺ってもよろしいでしょうか',
+            'もう一度復唱いたしますね',
+            '承知いたしました。◯◯様から電話を受けた旨、申し伝えます'
+          ]
+        },
+        message: {
+          question: '伝言を預かる',
+          steps: [
+            'よろしければ／お差し支えなければ、伝言をお伝えいたしましょうか',
+            'わたくし◯◯がお受けいたしました'
+          ]
+        }
+      }
+    }
+  },
+  {
+    id: 'message', name: '伝言・折り返し対応', emoji: '✉️', order: 5, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd5-1', text: '念のため、◯◯様のお電話番号を伺ってもよろしいでしょうか' },
+      { id: 'd5-2', text: 'もう一度復唱いたしますね' },
+      { id: 'd5-3', text: '承知いたしました。◯◯様から電話を受けた旨、申し伝えます' },
+      { id: 'd5-4', text: 'わたくし◯◯がお受けいたしました' }
+    ]
+  },
+  {
+    id: 'apology', name: '謝罪電話（返金・差額対応）', emoji: '🙇', order: 6, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd6-1', text: '大変申し訳ございませんが、' },
+      { id: 'd6-2', text: 'お会計の際にクレジット決済で金額の入力を誤ってしまい、◯◯円の差額が発生してしまいました。' },
+      { id: 'd6-3', text: '申し訳ございませんが、次回ご来局時に差額分のお支払いは可能でしょうか' },
+      { id: 'd6-4', text: 'お手数をおかけしますが、よろしくお願いいたします' },
+      { id: 'd6-5', text: 'その際にお支払いをお願いしてもよろしいでしょうか' }
+    ]
+  },
+  {
+    id: 'hang-up', name: '電話を切りにくい時の対応', emoji: '👋', order: 7, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd7-1', text: '（5秒ほど待ってから）お先に失礼します' },
+      { id: 'd7-2', text: 'こちらから失礼いたします' }
+    ]
+  },
+  {
+    id: 'transfer', name: '担当者へ取り次ぐ時', emoji: '🔀', order: 8, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd8-1', text: '担当の者におつなぎいたしますので、少々お待ちいただけますでしょうか' },
+      { id: 'd8-2', text: '◯◯様より、〜のお問い合わせです（取次先への要件伝達）' },
+      { id: 'd8-3', text: '恐れ入ります、もう少々お待ちいただけますでしょうか（保留が長引く場合）' }
+    ]
+  },
+  {
+    id: 'side-effect', name: '副作用・お薬不足・飲み合わせの問い合わせ', emoji: '💊', order: 9, kind: 'phrases', isDefault: true,
+    phrases: [
+      { id: 'd9-1', text: '詳しい症状を伺ってもよろしいでしょうか' },
+      { id: 'd9-2', text: 'いつ頃からの症状でしょうか' },
+      { id: 'd9-3', text: 'お薬の名前、もしくはお薬手帳はお手元にございますか' },
+      { id: 'd9-4', text: '念のため、お名前と生年月日を伺ってもよろしいでしょうか' },
+      { id: 'd9-5', text: '担当の薬剤師が確認のうえ、折り返しご連絡いたします' }
+    ]
+  }
+];
+
+const SHORTCUTS = [
+  { catId: 'absence', emoji: '🚶', label: '不在時対応' },
+  { catId: 'hours', emoji: '🕐', label: '受付時間・営業時間の問い合わせ' },
+  { catId: 'transfer', emoji: '🔀', label: '担当者へ取り次ぐ時' },
+  { catId: 'side-effect', emoji: '💊', label: '副作用・お薬不足・飲み合わせ' }
+];
+
+/* ============================================================
+   状態
+   ============================================================ */
+const state = {
+  currentUser: null,
+  categories: [],
+  firestoreEmpty: true,
+  loaded: false,
+  activeTab: 'basicRules',
+  openCategoryId: null,
+  flow: { path: [], currentNodeId: null }
+};
+let seedAttempted = false;
+let db = null;
+let auth = null;
+let authReady = false;
+
+function isConfigPlaceholder(){
+  return !firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('YOUR_') === 0;
+}
+
+function h(str){
+  return String(str == null ? '' : str).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+function genId(){
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+}
+function getCategories(){
+  return state.firestoreEmpty ? DEFAULT_CATEGORIES : state.categories;
+}
+function findCategory(id){
+  return getCategories().find(function(c){ return c.id === id; });
+}
+function canEdit(){
+  if (!state.currentUser) return false;
+  if (ALLOWED_EMAILS.length === 0) return true;
+  return ALLOWED_EMAILS.indexOf(state.currentUser.email) !== -1;
+}
+function renderPhraseText(cat, text){
+  if (!cat.businessHours) return text;
+  return text.replace('{open}', cat.businessHours.open).replace('{close}', cat.businessHours.close);
+}
+function showToast(msg, type){
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(function(){ el.remove(); }, 3200);
+}
+
+/* ============================================================
+   起動
+   ============================================================ */
+function boot(){
+  if (isConfigPlaceholder()){
+    renderSetupScreen();
+    return;
+  }
+  document.getElementById('mainContent').style.display = 'block';
+
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  auth = getAuth(app);
+
+  onAuthStateChanged(auth, function(user){
+    state.currentUser = user;
+    authReady = true;
+    renderAuthBox();
+    renderEditGatedUI();
+    maybeSeed();
+  });
+
+  onSnapshot(query(collection(db, 'categories'), orderBy('order')), function(snapshot){
+    state.firestoreEmpty = snapshot.empty;
+    state.categories = snapshot.docs.map(function(d){ return d.data(); });
+    state.loaded = true;
+    maybeSeed();
+    renderCategoryGrid();
+    if (state.openCategoryId) renderCategoryDetail(state.openCategoryId);
+  }, function(err){
+    showToast('データの読み込みに失敗しました: ' + err.message, 'error');
+  });
+
+  setupStaticUI();
+}
+
+async function maybeSeed(){
+  if (seedAttempted) return;
+  if (!authReady || !state.currentUser) return;
+  if (!state.firestoreEmpty) return;
+  seedAttempted = true;
+  try{
+    const batch = writeBatch(db);
+    DEFAULT_CATEGORIES.forEach(function(cat){
+      batch.set(doc(db, 'categories', cat.id), cat);
+    });
+    await batch.commit();
+  }catch(e){
+    seedAttempted = false;
+    showToast('初期データの準備に失敗しました: ' + e.message, 'error');
+  }
+}
+
+/* ============================================================
+   セットアップ未完了画面
+   ============================================================ */
+function renderSetupScreen(){
+  const rulesText = "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /categories/{categoryId} {\n      allow read: if true;\n      allow write: if request.auth != null;\n    }\n  }\n}";
+  document.getElementById('setupScreenWrap').innerHTML =
+    '<div class="setup-screen">' +
+      '<h2>⚙️ 初期設定が必要です</h2>' +
+      '<p>このツールを使うには、Firebase プロジェクトを作成し、<code>index.html</code> 内の <code>firebaseConfig</code> に接続情報を入力してください。</p>' +
+      '<ol>' +
+        '<li>Firebaseコンソールでプロジェクトを作成</li>' +
+        '<li>「Firestore Database」を作成</li>' +
+        '<li>「Authentication」で Google ログインを有効化</li>' +
+        '<li>ウェブアプリを追加し、表示された設定値を <code>firebaseConfig</code> に貼り付け</li>' +
+        '<li>下記のルールを Firestore の「ルール」タブに貼り付けて公開</li>' +
+      '</ol>' +
+      '<pre>' + h(rulesText) + '</pre>' +
+    '</div>';
+}
+
+/* ============================================================
+   認証UI
+   ============================================================ */
+function renderAuthBox(){
+  const box = document.getElementById('authBox');
+  if (state.currentUser){
+    const u = state.currentUser;
+    const photo = u.photoURL ? '<img src="' + h(u.photoURL) + '">' : '';
+    box.innerHTML =
+      '<div class="user-chip">' + photo + '<span>' + h(u.displayName || u.email) + '</span></div>' +
+      '<button class="btn secondary btn-sm" id="logoutBtn">ログアウト</button>';
+    document.getElementById('logoutBtn').onclick = function(){ signOut(auth); };
+  } else {
+    box.innerHTML = '<button class="btn btn-sm" id="loginBtn">Googleでログイン</button>';
+    document.getElementById('loginBtn').onclick = function(){
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).catch(function(e){
+        showToast('ログインに失敗しました: ' + e.message, 'error');
+      });
+    };
+  }
+}
+
+function renderEditGatedUI(){
+  document.getElementById('resetWrap').style.display = canEdit() ? 'flex' : 'none';
+  if (state.openCategoryId) renderCategoryDetail(state.openCategoryId);
+  renderCategoryGrid();
+}
+
+/* ============================================================
+   静的UIのイベント設定（タブ・検索・ショートカット・モーダル）
+   ============================================================ */
+function setupStaticUI(){
+  // タブ
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.onclick = function(){ switchTab(btn.dataset.tab); };
+  });
+  switchTab(state.activeTab);
+
+  // ショートカット
+  const grid = document.getElementById('shortcutsGrid');
+  grid.innerHTML = SHORTCUTS.map(function(s){
+    return '<button class="shortcut-card" data-cat="' + h(s.catId) + '">' +
+      '<span class="emoji">' + s.emoji + '</span><span>' + h(s.label) + '</span></button>';
+  }).join('');
+  grid.querySelectorAll('.shortcut-card').forEach(function(btn){
+    btn.onclick = function(){
+      switchTab('situations');
+      openCategory(btn.dataset.cat);
+    };
+  });
+
+  // 検索
+  const input = document.getElementById('searchInput');
+  const resultsBox = document.getElementById('searchResults');
+  const clearBtn = document.getElementById('searchClearBtn');
+  input.addEventListener('input', function(){
+    clearBtn.style.display = input.value ? 'inline-block' : 'none';
+    updateSearchResults(input.value);
+  });
+  input.addEventListener('focus', function(){ if (input.value) updateSearchResults(input.value); });
+  document.addEventListener('click', function(e){
+    if (!e.target.closest('.search-wrap')) resultsBox.classList.remove('show');
+  });
+  clearBtn.onclick = function(){ input.value=''; clearBtn.style.display='none'; resultsBox.classList.remove('show'); input.focus(); };
+
+  // 新規カテゴリモーダル
+  document.getElementById('cancelAddCategory').onclick = closeAddCategoryModal;
+  document.getElementById('confirmAddCategory').onclick = submitAddCategory;
+
+  // リセット
+  document.getElementById('resetBtn').onclick = resetAll;
+
+  renderCategoryGrid();
+}
+
+function switchTab(tab){
+  state.activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });
+  document.getElementById('panel-basicRules').classList.toggle('active', tab === 'basicRules');
+  document.getElementById('panel-situations').classList.toggle('active', tab === 'situations');
+}
+
+/* ============================================================
+   検索
+   ============================================================ */
+function categorySearchEntries(cat){
+  const entries = [];
+  (cat.phrases || []).forEach(function(p){ entries.push(renderPhraseText(cat, p.text)); });
+  if (cat.kind === 'flow' && cat.flow){
+    Object.keys(cat.flow.nodes).forEach(function(k){
+      const node = cat.flow.nodes[k];
+      if (node.question) entries.push(node.question);
+      (node.options || []).forEach(function(o){ entries.push(o.label); if (o.text) entries.push(o.text); });
+      (node.steps || []).forEach(function(s){ entries.push(s); });
+    });
+  }
+  return entries;
+}
+
+function updateSearchResults(query){
+  const box = document.getElementById('searchResults');
+  const q = query.trim().toLowerCase();
+  if (!q){ box.classList.remove('show'); box.innerHTML=''; return; }
+  const results = [];
+  getCategories().forEach(function(cat){
+    if (cat.name.toLowerCase().indexOf(q) !== -1){
+      results.push({ catId: cat.id, catName: cat.name, snippet: 'カテゴリを開く' });
+    }
+    categorySearchEntries(cat).forEach(function(text){
+      if (text.toLowerCase().indexOf(q) !== -1 && results.length < 12){
+        results.push({ catId: cat.id, catName: cat.name, snippet: text });
+      }
+    });
+  });
+  if (results.length === 0){
+    box.innerHTML = '<div class="search-empty">一致するフレーズ・カテゴリが見つかりません</div>';
+  } else {
+    box.innerHTML = results.slice(0, 12).map(function(r){
+      return '<button class="search-result-item" data-cat="' + h(r.catId) + '">' +
+        '<div class="cat">' + h(r.catName) + '</div>' +
+        '<div class="snip">' + h(r.snippet) + '</div></button>';
+    }).join('');
+    box.querySelectorAll('.search-result-item').forEach(function(btn){
+      btn.onclick = function(){
+        switchTab('situations');
+        openCategory(btn.dataset.cat);
+        box.classList.remove('show');
+      };
+    });
+  }
+  box.classList.add('show');
+}
+
+/* ============================================================
+   カテゴリ一覧・詳細
+   ============================================================ */
+function renderCategoryGrid(){
+  const grid = document.getElementById('categoryGrid');
+  if (!grid) return;
+  const cats = getCategories();
+  let html = cats.map(function(cat){
+    const count = (cat.phrases || []).length + (cat.kind === 'flow' ? 1 : 0);
+    return '<button class="category-card' + (cat.isDefault ? '' : ' custom') + '" data-cat="' + h(cat.id) + '">' +
+      '<span class="emoji">' + (cat.emoji || '💬') + '</span>' +
+      '<span class="name">' + h(cat.name) + '</span>' +
+      '<span class="count">' + count + '件の内容</span>' +
+      '</button>';
+  }).join('');
+  if (canEdit()){
+    html += '<button class="add-category-card" id="addCategoryBtn"><span style="font-size:22px;">＋</span>新規カテゴリを追加</button>';
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.category-card').forEach(function(btn){
+    btn.onclick = function(){ openCategory(btn.dataset.cat); };
+  });
+  const addBtn = document.getElementById('addCategoryBtn');
+  if (addBtn) addBtn.onclick = openAddCategoryModal;
+}
+
+function openCategory(catId){
+  state.openCategoryId = catId;
+  state.flow = { path: [], currentNodeId: null };
+  document.getElementById('situationsList').style.display = 'none';
+  document.getElementById('situationsDetail').style.display = 'block';
+  renderCategoryDetail(catId);
+}
+function closeCategory(){
+  state.openCategoryId = null;
+  document.getElementById('situationsList').style.display = 'block';
+  document.getElementById('situationsDetail').style.display = 'none';
+}
+
+function renderCategoryDetail(catId){
+  const cat = findCategory(catId);
+  const wrap = document.getElementById('situationsDetail');
+  if (!cat){ closeCategory(); return; }
+
+  let html = '<div class="detail-header">' +
+    '<button class="back-btn" id="backBtn">← 一覧に戻る</button>' +
+    '<h2>' + (cat.emoji || '') + ' ' + h(cat.name) + '</h2>';
+  if (canEdit() && !cat.isDefault){
+    html += '<button class="btn danger btn-sm" id="deleteCatBtn">削除</button>';
+  }
+  html += '</div>';
+
+  if (cat.businessHours){
+    html += '<div class="hours-form">' +
+      '<label>受付時間:</label>' +
+      '<input type="time" id="hoursOpen" value="' + h(cat.businessHours.open) + '" ' + (canEdit() ? '' : 'disabled') + '> 〜 ' +
+      '<input type="time" id="hoursClose" value="' + h(cat.businessHours.close) + '" ' + (canEdit() ? '' : 'disabled') + '>' +
+      (canEdit() ? '<button class="btn btn-sm" id="saveHoursBtn">保存</button>' : '') +
+      '</div>';
+  }
+
+  if (cat.kind === 'flow'){
+    html += '<div class="flow-box" id="flowBox"></div>';
+  }
+
+  html += '<ul class="phrase-list" id="phraseList"></ul>';
+
+  if (canEdit()){
+    html += '<div class="add-phrase-form">' +
+      '<input type="text" id="newPhraseInput" placeholder="フレーズを追加...">' +
+      '<button class="btn btn-sm" id="addPhraseBtn">追加</button></div>';
+  }
+
+  wrap.innerHTML = html;
+
+  document.getElementById('backBtn').onclick = closeCategory;
+  const delBtn = document.getElementById('deleteCatBtn');
+  if (delBtn) delBtn.onclick = function(){ deleteCategory(cat.id); };
+
+  const saveHoursBtn = document.getElementById('saveHoursBtn');
+  if (saveHoursBtn){
+    saveHoursBtn.onclick = function(){
+      const open = document.getElementById('hoursOpen').value;
+      const close = document.getElementById('hoursClose').value;
+      updateHours(cat.id, open, close);
+    };
+  }
+
+  renderPhraseListInto(cat);
+
+  const addPhraseBtn = document.getElementById('addPhraseBtn');
+  if (addPhraseBtn){
+    addPhraseBtn.onclick = function(){
+      const input = document.getElementById('newPhraseInput');
+      addPhrase(cat.id, input.value);
+      input.value = '';
+    };
+    document.getElementById('newPhraseInput').addEventListener('keydown', function(e){
+      if (e.key === 'Enter') addPhraseBtn.click();
+    });
+  }
+
+  if (cat.kind === 'flow') renderFlow(cat);
+}
+
+function renderPhraseListInto(cat){
+  const list = document.getElementById('phraseList');
+  if (!list) return;
+  if (!cat.phrases || cat.phrases.length === 0){
+    list.innerHTML = '<div class="empty-hint">' + (cat.kind === 'flow' ? '補足フレーズはまだありません。' : 'フレーズはまだ登録されていません。') + '</div>';
+  } else {
+    list.innerHTML = cat.phrases.map(function(p){
+      return '<li class="phrase-item"><span class="txt">' + h(renderPhraseText(cat, p.text)) + '</span>' +
+        (canEdit() ? '<button class="phrase-del" data-id="' + h(p.id) + '">✕</button>' : '') + '</li>';
+    }).join('');
+    list.querySelectorAll('.phrase-del').forEach(function(btn){
+      btn.onclick = function(){
+        const phraseObj = cat.phrases.find(function(p){ return p.id === btn.dataset.id; });
+        if (phraseObj) deletePhrase(cat.id, phraseObj);
+      };
+    });
+  }
+}
+
+/* ============================================================
+   不在時対応フロー（分岐タップ式）
+   ============================================================ */
+function renderFlow(cat){
+  const box = document.getElementById('flowBox');
+  if (!box) return;
+  const flow = cat.flow;
+  const nodeId = state.flow.currentNodeId || flow.start;
+  const node = flow.nodes[nodeId];
+
+  let html = '';
+  if (state.flow.path.length){
+    html += '<div class="flow-breadcrumb">' + state.flow.path.map(function(p){
+      return '<span class="flow-crumb">' + h(p) + '</span>';
+    }).join('') + '</div>';
+  }
+
+  html += '<div class="flow-question">' + h(node.question) + '</div>';
+
+  if (node.steps){
+    html += '<ol class="flow-steps">' + node.steps.map(function(s){ return '<li>' + h(s) + '</li>'; }).join('') + '</ol>';
+  } else if (node.options){
+    html += '<div class="flow-options">' + node.options.map(function(o, idx){
+      return '<button class="flow-option-btn" data-idx="' + idx + '">' + h(o.label) + '</button>';
+    }).join('') + '</div>';
+  }
+
+  html += '<div class="flow-restart"><button class="btn secondary btn-sm" id="flowRestartBtn">↺ 最初からやり直す</button></div>';
+
+  box.innerHTML = html;
+
+  document.getElementById('flowRestartBtn').onclick = function(){
+    state.flow = { path: [], currentNodeId: null };
+    renderFlow(cat);
+  };
+
+  if (node.options){
+    box.querySelectorAll('.flow-option-btn').forEach(function(btn){
+      btn.onclick = function(){
+        const opt = node.options[Number(btn.dataset.idx)];
+        state.flow.path.push(opt.label);
+        if (opt.text){
+          state.flow.pendingText = opt.text;
+        }
+        if (opt.next){
+          state.flow.currentNodeId = opt.next;
+          renderFlow(cat);
+          if (opt.text){
+            // 選択直後のフレーズを一時的に表示
+            const q = box.querySelector('.flow-question');
+            const p = document.createElement('div');
+            p.className = 'flow-phrase';
+            p.textContent = opt.text;
+            q.insertAdjacentElement('afterend', p);
+          }
+        } else {
+          // 終端（次のノードがない）場合はそのままフレーズを表示
+          box.querySelector('.flow-options').outerHTML =
+            '<div class="flow-phrase">' + h(opt.text || '') + '</div>';
+        }
+      };
+    });
+  }
+}
+
+/* ============================================================
+   Firestore 書き込み系
+   ============================================================ */
+async function addPhrase(categoryId, text){
+  if (!canEdit()) return;
+  text = (text || '').trim();
+  if (!text) return;
+  if (state.firestoreEmpty){ showToast('データを準備中です。数秒後にもう一度お試しください', 'error'); return; }
+  try{
+    await updateDoc(doc(db, 'categories', categoryId), {
+      phrases: arrayUnion({ id: genId(), text: text })
+    });
+  }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); }
+}
+
+async function deletePhrase(categoryId, phraseObj){
+  if (!canEdit()) return;
+  try{
+    await updateDoc(doc(db, 'categories', categoryId), {
+      phrases: arrayRemove(phraseObj)
+    });
+  }catch(e){ showToast('削除に失敗しました: ' + e.message, 'error'); }
+}
+
+async function updateHours(categoryId, open, close){
+  if (!canEdit()) return;
+  try{
+    await updateDoc(doc(db, 'categories', categoryId), { businessHours: { open: open, close: close } });
+    showToast('受付時間を更新しました', 'success');
+  }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); }
+}
+
+async function submitAddCategory(){
+  if (!canEdit()) return;
+  const name = document.getElementById('newCategoryName').value.trim();
+  const lines = document.getElementById('newCategoryPhrases').value.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  if (!name){ showToast('カテゴリ名を入力してください', 'error'); return; }
+  const phrases = lines.map(function(t){ return { id: genId(), text: t }; });
+  const maxOrder = getCategories().reduce(function(m, c){ return Math.max(m, c.order || 0); }, 0);
+  try{
+    const ref = doc(collection(db, 'categories'));
+    await setDoc(ref, {
+      id: ref.id, name: name, emoji: '💬', kind: 'phrases', order: maxOrder + 1,
+      isDefault: false, phrases: phrases
+    });
+    closeAddCategoryModal();
+    showToast('カテゴリを追加しました', 'success');
+  }catch(e){ showToast('追加に失敗しました: ' + e.message, 'error'); }
+}
+
+async function deleteCategory(categoryId){
+  if (!canEdit()) return;
+  if (!confirm('このカテゴリを削除します。元に戻せません。よろしいですか？')) return;
+  try{
+    await deleteDoc(doc(db, 'categories', categoryId));
+    closeCategory();
+    showToast('カテゴリを削除しました', 'success');
+  }catch(e){ showToast('削除に失敗しました: ' + e.message, 'error'); }
+}
+
+async function resetAll(){
+  if (!canEdit()) return;
+  if (!confirm('すべてのカテゴリを初期状態に戻します。追加・編集した内容はすべて失われます。よろしいですか？')) return;
+  try{
+    const snap = await getDocs(collection(db, 'categories'));
+    const batch = writeBatch(db);
+    snap.forEach(function(d){ batch.delete(d.ref); });
+    await batch.commit();
+    seedAttempted = false;
+    closeCategory();
+    showToast('初期状態にリセットしました', 'success');
+  }catch(e){ showToast('リセットに失敗しました: ' + e.message, 'error'); }
+}
+
+/* ============================================================
+   モーダル
+   ============================================================ */
+function openAddCategoryModal(){
+  document.getElementById('newCategoryName').value = '';
+  document.getElementById('newCategoryPhrases').value = '';
+  document.getElementById('addCategoryModal').classList.add('show');
+}
+function closeAddCategoryModal(){
+  document.getElementById('addCategoryModal').classList.remove('show');
+}
+
+boot();
+</script>
+</body>
+</html>
