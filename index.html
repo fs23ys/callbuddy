@@ -204,7 +204,7 @@
   .phrase-item{ display:flex; align-items:flex-start; gap:8px; background: var(--surface); border:1px solid var(--border); padding:10px 12px; border-radius:12px; font-size:14px; line-height:1.8; box-shadow: var(--shadow); }
   .phrase-item .txt{ flex:1; white-space:pre-wrap; }
   .phrase-heading{ font-weight:700; color: var(--primary-deep); font-size:15px; margin-bottom:8px; }
-  .phrase-note{ margin-top:10px; font-size:13px; color: var(--text); line-height:1.7; background: var(--surface-2); border-radius:8px; padding:8px 10px; }
+  .phrase-note{ margin:10px 0; font-size:13px; color: var(--text); line-height:1.7; background: var(--surface-2); border-radius:8px; padding:8px 10px; }
   .table-scroll{ overflow-x:auto; }
   table.replace-table{ width:100%; border-collapse: collapse; font-size:13.5px; }
   table.replace-table th, table.replace-table td{ padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
@@ -235,6 +235,8 @@
   .phrase-preamble{ margin-bottom:10px; }
   .phrase-branches{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
   .phrase-branch{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:left; display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; }
+  .phrase-branch.stacked{ flex-direction:column; }
+  .phrase-branch.stacked .phrase-branch-body{ width:100%; }
   .phrase-branch-badge{ display:inline-flex; align-items:center; flex-shrink:0; white-space:nowrap; background: var(--accent); color:#8a4b12; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; letter-spacing:0.2px; }
   .phrase-branch-body{ font-size:14px; line-height:1.7; flex:1; min-width:120px; }
   .phrase-del{ border:none; background:none; color: var(--danger); font-size:15px; padding:2px 4px; line-height:1; }
@@ -257,10 +259,10 @@
   .empty-hint{ font-size:13px; color: var(--text-light); padding:10px 4px; }
 
   /* ---------- Flow ---------- */
-  .flow-box{ background: var(--surface-2); border-radius: 14px; padding:16px; margin-bottom:14px; }
+  .flow-box{ background: var(--surface); box-shadow: var(--shadow); border-radius: 14px; padding:16px; margin-bottom:14px; }
   .flow-breadcrumb{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
   .flow-crumb{ font-size:11.5px; font-weight:700; background:var(--primary); color:#fff; padding:4px 10px; border-radius:999px; letter-spacing:0.2px; }
-  .flow-question{ font-weight:700; font-size:14px; margin-bottom:10px; color: var(--primary-deep); }
+  .flow-question{ font-weight:700; font-size:15px; margin-bottom:10px; color: var(--primary-deep); }
   .flow-note{ font-size:12px; color: var(--text-light); white-space:pre-wrap; line-height:1.6; margin:-4px 0 12px; }
   .flow-phrase{ background:#fff; border-left:4px solid var(--primary-dark); padding:10px 14px; border-radius:8px; font-size:14.5px; margin-bottom:12px; white-space:pre-wrap; line-height:1.7; }
   .flow-options{ display:flex; flex-direction:column; gap:8px; }
@@ -591,9 +593,11 @@ const DEFAULT_CATEGORIES = [
     ]
   },
   {
-    id: 'apology', name: '謝罪電話（返金・差額対応）', icon: 'bow', order: 6, kind: 'phrases', isDefault: true,
+    id: 'apology', name: '謝罪電話', icon: 'bow', order: 6, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd6-1', text: '◯◯様の電話番号でお間違いないでしょうか。わたくし◯◯薬局の◯◯と申します。本日お薬をお渡しさせていただいた者です。\n今お時間だいじょうぶでしょうか？\n大変申し訳ございませんが、\nお会計の際にクレジット決済で金額の入力を誤ってしまい、◯◯円の差額が発生してしまいました。\n申し訳ございませんが、次回ご来局時に差額分のお支払いは可能でしょうか\nお手数をおかけしますが、よろしくお願いいたします\nその際にお支払いをお願いしてもよろしいでしょうか\nこの度は大変ご迷惑をお掛けして申し訳ございません' }
+      { id: 'd6-1', text: '【返金・差額対応】\n◯◯様のお電話番号でお間違いないでしょうか。わたくし◯◯薬局の◯◯と申します。本日お薬をお渡しさせていただいた者です。\n今少しお時間よろしいでしょうか？\n大変申し訳ございませんが、お会計の際にクレジット決済で金額の入力を誤ってしまい、◯◯円の差額が発生してしまいました。\nお手数をおかけしますが、次回ご来局時に差額分のお支払いをお願いしてもよろしいでしょうか\nこの度は大変ご迷惑をお掛けして申し訳ございません' },
+      { id: 'd6-2', text: '【お薬手帳のシール貼り忘れ】\n◯◯様のお電話番号でお間違いないでしょうか。わたくし◯◯薬局の◯◯と申します。\n今少しお時間よろしいでしょうか？\n大変申し訳ございませんが、本日お渡ししたお薬手帳に、お薬のシールをお貼りするのを失念しておりました。\n恐れ入りますが、次回ご来局の際に貼らせていただいてもよろしいでしょうか。お急ぎでしたら、シールを郵送させていただくことも可能です。\nこの度は大変申し訳ございませんでした' },
+      { id: 'd6-3', text: '【領収書の渡しそびれ】\n◯◯様のお電話番号でお間違いないでしょうか。わたくし◯◯薬局の◯◯と申します。\n今少しお時間よろしいでしょうか？\n大変申し訳ございませんが、本日のお会計時に領収書をお渡しするのを失念しておりました。\n恐れ入りますが、次回ご来局の際にお渡しさせていただいてもよろしいでしょうか。今すぐ必要でしたら、郵送でお送りすることも可能です。\nこの度は大変申し訳ございませんでした' }
     ]
   },
   {
@@ -1353,7 +1357,7 @@ function renderPhraseBody(cat, rawText){
       html += '<div class="phrase-preamble">' + h(preamble[0]) + '</div>';
     }
     html += '<div class="phrase-branches">' + branches.map(function(b){
-      return '<div class="phrase-branch">' +
+      return '<div class="phrase-branch' + (b.lines.length > 1 ? ' stacked' : '') + '">' +
         '<span class="phrase-branch-badge">' + h(b.label) + '</span>' +
         '<div class="phrase-branch-body">' + b.lines.map(h).join('<br>') + '</div>' +
         '</div>';
