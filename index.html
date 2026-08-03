@@ -244,7 +244,7 @@
   .phrase-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; }
   .phrase-edit-btn{ border:none; background:none; color: var(--primary-deep); font-size:11.5px; font-weight:700; padding:2px 4px; }
   .phrase-item.editing{ align-items:stretch; }
-  .phrase-edit-textarea{ width:270px; max-width:100%; min-height:320px; padding:9px 12px; border-radius:10px; border:1px solid var(--primary); font-size:14px; font-family:inherit; resize:vertical; line-height:1.6; box-sizing:border-box; }
+  .phrase-edit-textarea{ width:100%; min-height:320px; padding:9px 12px; border-radius:10px; border:1px solid var(--primary); font-size:14px; font-family:inherit; resize:vertical; line-height:1.6; box-sizing:border-box; }
   .phrase-edit-actions{ display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
 
   .add-phrase-form{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
@@ -525,13 +525,26 @@ const DEFAULT_CATEGORIES = [
     ]
   },
   {
-    id: 'giji-shokai', name: '疑義照会', icon: 'activity', order: 3, kind: 'phrases', isDefault: true,
+    id: 'giji-shokai', name: '疑義照会', icon: 'activity', order: 3, kind: 'flow', isDefault: true,
     phrases: [
-      { id: 'd3-0a', text: '【枕詞編】\n・お世話になっております。◯◯薬局の◯◯でございます\n・お忙しいところ恐れ入ります。◯◯薬局の◯◯と申します。' },
-      { id: 'd3-2', text: '【本題の流れ】\n◯◯様の処方の件でお伺いしたいのですが、今お時間よろしいでしょうか\n※ここで確認したい内容を簡潔に伝える' },
-      { id: 'd3-3', text: '【締めの挨拶】\n・ご確認いただきありがとうございました。よろしくお願いいたします。お電話失礼いたします。\n・ご対応ありがとうございました。よろしくお願いいたします。お電話失礼いたします。' },
-      { id: 'd3-4', text: '◆具体例：併用に関する疑義照会（テリパラチド×デノタスチュアブル）\n◯◯クリニックの先生、お忙しいところ恐れ入ります。△△薬局の薬剤師の◯◯です。\n本日、当局にて◯◯様にテリパラチドが処方されたのですが、先生のところで処方されているデノタスチュアブルとの併用についてご相談したくお電話いたしました。\nテリパラチドの添付文書上、血清カルシウム値を上昇させるおそれがあるため、デノタスのようなカルシウム・ビタミンD製剤との併用は避けることが望ましい旨の記載がございます。\n患者様の安全のため、デノタスの一時休薬や、カルシウム値のモニタリング等についてご指示をいただけないでしょうか。' }
-    ]
+      { id: 'd3-0a', before: true, text: '【枕詞編】\n・お世話になっております。◯◯薬局の◯◯でございます\n・お忙しいところ恐れ入ります。◯◯薬局の◯◯と申します。' },
+      { id: 'd3-3', text: '【締めの挨拶】\n・ご確認いただきありがとうございました。よろしくお願いいたします。お電話失礼いたします。\n・ご対応ありがとうございました。よろしくお願いいたします。お電話失礼いたします。' }
+    ],
+    flow: {
+      start: 'mainTopic',
+      nodes: {
+        mainTopic: {
+          question: '本題の流れ',
+          steps: [
+            '◯◯様の処方の件でお伺いしたいのですが、今お時間よろしいでしょうか',
+            '※ここで確認したい内容を簡潔に伝える'
+          ],
+          options: [
+            { label: '併用に関して', text: '【具体例：併用に関する疑義照会（テリパラチド×デノタスチュアブル）】\n◯◯クリニックの先生、お忙しいところ恐れ入ります。△△薬局の薬剤師の◯◯です。\n本日、当局にて◯◯様にテリパラチドが処方されたのですが、先生のところで処方されているデノタスチュアブルとの併用についてご相談したくお電話いたしました。\nテリパラチドの添付文書上、血清カルシウム値を上昇させるおそれがあるため、デノタスのようなカルシウム・ビタミンD製剤との併用は避けることが望ましい旨の記載がございます。\n患者様の安全のため、デノタスの一時休薬や、カルシウム値のモニタリング等についてご指示をいただけないでしょうか。', next: null }
+          ]
+        }
+      }
+    }
   },
   {
     id: 'absence', name: '不在時対応', icon: 'logout', order: 4, kind: 'flow', isDefault: true,
@@ -933,11 +946,14 @@ function boot(){
 async function maybeSeed(){
   if (seedAttempted) return;
   if (!authReady || !state.currentUser) return;
-  if (!state.firestoreEmpty) return;
+  if (!state.loaded) return;
+  const existingIds = state.categories.map(function(c){ return c.id; });
+  const missing = DEFAULT_CATEGORIES.filter(function(cat){ return existingIds.indexOf(cat.id) === -1; });
+  if (!missing.length) return;
   seedAttempted = true;
   try{
     const batch = writeBatch(db);
-    DEFAULT_CATEGORIES.forEach(function(cat){
+    missing.forEach(function(cat){
       batch.set(doc(db, 'categories', cat.id), cat);
     });
     await batch.commit();
@@ -1206,6 +1222,7 @@ function renderCategoryDetail(catId){
   }
 
   if (cat.kind === 'flow'){
+    html += '<ul class="phrase-list" id="phraseListBefore"></ul>';
     html += '<div class="flow-box" id="flowBox"></div>';
   }
 
@@ -1246,10 +1263,14 @@ function renderCategoryDetail(catId){
 }
 
 function needsFlowWrapper(text){
-  const lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  let lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  if (!lines.length) return true;
+  if (/^【.*】$/.test(lines[0])){
+    lines = lines.slice(1);
+  }
+  lines = lines.filter(function(l){ return l.indexOf('※') !== 0; });
   if (!lines.length) return true;
   const first = lines[0];
-  if (/^【.*】$/.test(first)) return false;
   if (first.indexOf('◆') === 0) return false;
   if (first.indexOf('・') === 0) return false;
   return true;
@@ -1327,64 +1348,72 @@ function renderPhraseBody(cat, rawText){
 }
 
 function renderPhraseListInto(cat){
-  const list = document.getElementById('phraseList');
-  if (!list) return;
-  if (!cat.phrases || cat.phrases.length === 0){
-    list.innerHTML = '<div class="empty-hint">' + (cat.kind === 'flow' ? '補足フレーズはまだありません。' : 'フレーズはまだ登録されていません。') + '</div>';
-  } else {
-    list.innerHTML = cat.phrases.map(function(p){
-      if (state.editingPhraseId === p.id){
-        return '<li class="phrase-item editing">' +
-          '<div class="txt">' +
-          '<textarea class="phrase-edit-textarea">' + h(p.text) + '</textarea>' +
-          '<div class="phrase-edit-actions">' +
-          '<button class="btn btn-sm" data-id="' + h(p.id) + '" data-act="save">保存</button>' +
-          '<button class="btn secondary btn-sm" data-id="' + h(p.id) + '" data-act="cancel">キャンセル</button>' +
-          '</div></div></li>';
-      }
-      return '<li class="phrase-item"><div class="txt">' + renderPhraseBody(cat, p.text) + '</div>' +
-        (canEdit() ? '<div class="phrase-actions">' +
-          '<button class="phrase-edit-btn" data-id="' + h(p.id) + '">編集</button>' +
-          '<button class="phrase-del" data-id="' + h(p.id) + '">✕</button>' +
-          '</div>' : '') + '</li>';
-    }).join('');
-
-    list.querySelectorAll('.phrase-edit-textarea').forEach(function(ta){
-      ta.style.height = Math.max(ta.scrollHeight, 320) + 'px';
-      ta.addEventListener('input', function(){
-        ta.style.height = 'auto';
-        ta.style.height = ta.scrollHeight + 'px';
-      });
-    });
-
-    list.querySelectorAll('.phrase-del').forEach(function(btn){
-      btn.onclick = function(){
-        const phraseObj = cat.phrases.find(function(p){ return p.id === btn.dataset.id; });
-        if (phraseObj) deletePhrase(cat.id, phraseObj);
-      };
-    });
-    list.querySelectorAll('.phrase-edit-btn').forEach(function(btn){
-      btn.onclick = function(){
-        state.editingPhraseId = btn.dataset.id;
-        renderPhraseListInto(cat);
-      };
-    });
-    list.querySelectorAll('[data-act="cancel"]').forEach(function(btn){
-      btn.onclick = function(){
-        state.editingPhraseId = null;
-        renderPhraseListInto(cat);
-      };
-    });
-    list.querySelectorAll('[data-act="save"]').forEach(function(btn){
-      btn.onclick = async function(){
-        const li = btn.closest('li');
-        const textarea = li.querySelector('.phrase-edit-textarea');
-        const ok = await updatePhrase(cat.id, btn.dataset.id, textarea.value);
-        if (ok) state.editingPhraseId = null;
-        renderPhraseListInto(findCategory(cat.id) || cat);
-      };
-    });
+  const allPhrases = cat.phrases || [];
+  const beforeList = document.getElementById('phraseListBefore');
+  if (beforeList){
+    renderPhraseSubList(cat, beforeList, allPhrases.filter(function(p){ return p.before === true; }), false);
   }
+  renderPhraseSubList(cat, document.getElementById('phraseList'), allPhrases.filter(function(p){ return p.before !== true; }), true);
+}
+
+function renderPhraseSubList(cat, list, phrases, showEmptyHint){
+  if (!list) return;
+  if (!phrases.length){
+    list.innerHTML = showEmptyHint ? ('<div class="empty-hint">' + (cat.kind === 'flow' ? '補足フレーズはまだありません。' : 'フレーズはまだ登録されていません。') + '</div>') : '';
+    return;
+  }
+  list.innerHTML = phrases.map(function(p){
+    if (state.editingPhraseId === p.id){
+      return '<li class="phrase-item editing">' +
+        '<div class="txt">' +
+        '<textarea class="phrase-edit-textarea">' + h(p.text) + '</textarea>' +
+        '<div class="phrase-edit-actions">' +
+        '<button class="btn btn-sm" data-id="' + h(p.id) + '" data-act="save">保存</button>' +
+        '<button class="btn secondary btn-sm" data-id="' + h(p.id) + '" data-act="cancel">キャンセル</button>' +
+        '</div></div></li>';
+    }
+    return '<li class="phrase-item"><div class="txt">' + renderPhraseBody(cat, p.text) + '</div>' +
+      (canEdit() ? '<div class="phrase-actions">' +
+        '<button class="phrase-edit-btn" data-id="' + h(p.id) + '">編集</button>' +
+        '<button class="phrase-del" data-id="' + h(p.id) + '">✕</button>' +
+        '</div>' : '') + '</li>';
+  }).join('');
+
+  list.querySelectorAll('.phrase-edit-textarea').forEach(function(ta){
+    ta.style.height = Math.max(ta.scrollHeight, 320) + 'px';
+    ta.addEventListener('input', function(){
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    });
+  });
+
+  list.querySelectorAll('.phrase-del').forEach(function(btn){
+    btn.onclick = function(){
+      const phraseObj = (cat.phrases || []).find(function(p){ return p.id === btn.dataset.id; });
+      if (phraseObj) deletePhrase(cat.id, phraseObj);
+    };
+  });
+  list.querySelectorAll('.phrase-edit-btn').forEach(function(btn){
+    btn.onclick = function(){
+      state.editingPhraseId = btn.dataset.id;
+      renderPhraseListInto(cat);
+    };
+  });
+  list.querySelectorAll('[data-act="cancel"]').forEach(function(btn){
+    btn.onclick = function(){
+      state.editingPhraseId = null;
+      renderPhraseListInto(cat);
+    };
+  });
+  list.querySelectorAll('[data-act="save"]').forEach(function(btn){
+    btn.onclick = async function(){
+      const li = btn.closest('li');
+      const textarea = li.querySelector('.phrase-edit-textarea');
+      const ok = await updatePhrase(cat.id, btn.dataset.id, textarea.value);
+      if (ok) state.editingPhraseId = null;
+      renderPhraseListInto(findCategory(cat.id) || cat);
+    };
+  });
 }
 
 /* ============================================================
