@@ -78,6 +78,7 @@
     color: var(--text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
   #app{ max-width: 920px; margin: 0 auto; padding: 12px 14px 60px; }
   button{ font-family: inherit; cursor: pointer; }
@@ -216,33 +217,41 @@
   .phrase-item{ display:flex; align-items:flex-start; gap:8px; background: var(--surface); border:1px solid var(--border); padding:10px 12px; border-radius:12px; font-size:14px; line-height:1.8; box-shadow: var(--shadow); }
   .phrase-item .txt{ flex:1; white-space:pre-wrap; }
   .phrase-heading{ font-weight:700; color: var(--primary-deep); font-size:15px; margin-bottom:8px; }
+  .phrase-note{ margin-top:10px; font-size:12px; color: var(--text-light); line-height:1.7; background: var(--surface-2); border-radius:8px; padding:8px 10px; }
   .phrase-steps{
-    list-style:none; margin:0; padding-left:0;
+    list-style:none; margin:0 0 12px; padding-left:0;
     display:flex; flex-direction:column; gap:12px;
   }
   .phrase-steps li{
-    position:relative; padding-left:30px; min-height:22px;
+    display:flex; align-items:flex-start; gap:8px;
   }
   .phrase-steps li .step-num{
-    position:absolute; left:0; top:0;
+    flex-shrink:0; margin-top:1px;
     width:20px; height:20px; border-radius:50%;
     background: var(--step-bg); color: var(--step-text);
     font-weight:700; font-size:11.5px;
     display:flex; align-items:center; justify-content:center;
     line-height:1;
   }
+  .phrase-steps li .step-txt{ flex:1; line-height:1.7; }
   .phrase-choices{ display:flex; flex-direction:column; gap:8px; }
   .phrase-choice{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
   .phrase-preamble{ margin-bottom:10px; }
   .phrase-branches{ display:flex; flex-direction:column; gap:10px; }
-  .phrase-branch{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
-  .phrase-branch-badge{ display:inline-block; background: var(--accent); color:#8a4b12; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; margin-bottom:8px; letter-spacing:0.2px; }
-  .phrase-branch-body{ font-size:14px; line-height:1.7; }
+  .phrase-branch{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:left; display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; }
+  .phrase-branch-badge{ display:inline-flex; align-items:center; flex-shrink:0; white-space:nowrap; background: var(--accent); color:#8a4b12; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; letter-spacing:0.2px; }
+  .phrase-branch-body{ font-size:14px; line-height:1.7; flex:1; min-width:120px; }
   .phrase-del{ border:none; background:none; color: var(--danger); font-size:15px; padding:2px 4px; line-height:1; }
   .phrase-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; }
   .phrase-edit-btn{ border:none; background:none; color: var(--primary-deep); font-size:11.5px; font-weight:700; padding:2px 4px; }
-  .phrase-item.editing{ align-items:stretch; }
-  .phrase-edit-textarea{ width:100%; min-height:80px; padding:9px 12px; border-radius:10px; border:1px solid var(--primary); font-size:14px; font-family:inherit; resize:vertical; }
+  .phrase-item.editing{
+    align-items:stretch; flex-direction:column;
+    width:100vw; max-width:100vw; box-sizing:border-box;
+    margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw);
+    border-radius:0; border-left:none; border-right:none;
+    padding:12px 16px;
+  }
+  .phrase-edit-textarea{ width:100%; min-height:320px; padding:9px 12px; border-radius:10px; border:1px solid var(--primary); font-size:14px; font-family:inherit; resize:vertical; line-height:1.6; box-sizing:border-box; }
   .phrase-edit-actions{ display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
 
   .add-phrase-form{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
@@ -266,16 +275,17 @@
   .flow-options{ display:flex; flex-direction:column; gap:8px; }
   .flow-option-btn{ text-align:left; background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:14px; font-weight:700; color: var(--text); box-shadow: var(--shadow); }
   .flow-option-btn:hover{ background: var(--primary); color:#fff; }
-  .flow-steps{ list-style:none; padding-left:0; margin:0; display:flex; flex-direction:column; gap:10px; }
-  .flow-steps li{ background:#fff; padding:10px 12px 10px 38px; border-radius:8px; font-size:14px; position:relative; }
+  .flow-steps{ list-style:none; padding-left:0; margin:0 0 14px; display:flex; flex-direction:column; gap:10px; }
+  .flow-steps li{ background:#fff; padding:10px 14px; border-radius:8px; font-size:14px; display:flex; align-items:flex-start; gap:8px; }
   .flow-steps li .step-num{
-    position:absolute; left:10px; top:10px;
+    flex-shrink:0; margin-top:1px;
     width:20px; height:20px; border-radius:50%;
     background: var(--step-bg); color: var(--step-text);
     font-weight:700; font-size:11.5px;
     display:flex; align-items:center; justify-content:center;
     line-height:1;
   }
+  .flow-steps li .step-txt{ flex:1; line-height:1.7; }
   .flow-restart{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
 
   /* ---------- Modal ---------- */
@@ -347,19 +357,7 @@
     <!-- 基本ルール -->
     <div class="panel" id="panel-basicRules">
       <div class="card">
-        <h3><span class="num">1</span>クッション言葉</h3>
-        <div class="cushion-list">
-          <span class="cushion-chip">恐れ入りますが</span>
-          <span class="cushion-chip">失礼ですが</span>
-          <span class="cushion-chip">申し訳ございませんが</span>
-          <span class="cushion-chip">お差し支えなければ</span>
-          <span class="cushion-chip">お手数をおかけしますが</span>
-          <span class="cushion-chip">よろしければ</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3><span class="num">2</span>言い換え表（NG→OK）</h3>
+        <h3><span class="num">1</span>言い換え表（NG→OK）</h3>
         <div class="table-scroll">
         <table class="replace-table">
           <thead><tr><th>NG</th><th>OK</th></tr></thead>
@@ -383,7 +381,7 @@
       </div>
 
       <div class="card">
-        <h3><span class="num">3</span>確認表現の使い分け</h3>
+        <h3><span class="num">2</span>確認表現の使い分け</h3>
         <div class="table-scroll">
         <table class="replace-table">
           <thead><tr><th>場面</th><th>表現</th></tr></thead>
@@ -402,9 +400,16 @@
       </div>
 
       <div class="card">
-        <h3><span class="num">4</span>会話中に使える相槌フレーズ</h3>
+        <h3><span class="num">3</span>会話中に使える相槌フレーズ</h3>
         <ul class="basic-phrase-list">
           <li>さようでございますね</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">4</span>電話に出るタイミングのマナー</h3>
+        <ul class="basic-phrase-list">
+          <li>3コールを超えて電話に出ると失礼な印象を与えかねないため、出るのが遅れた時は「大変お待たせしてしまい申し訳ございません」と一言添える</li>
         </ul>
       </div>
     </div>
@@ -515,9 +520,9 @@ const DEFAULT_CATEGORIES = [
   {
     id: 'reception-first', name: '受付一次対応', icon: 'chatDots', order: 1, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd1-1', text: '【第一声（時間帯別）】\n・午前中: おはようございます\n・10:30以降: はい、◯◯薬局です' },
-      { id: 'd1-2', text: '【用件確認の前に（該当する場合）】\n・患者の場合: 恐れ入りますが、お名前と生年月日をお伺いしてもよろしいでしょうか\n・折り返し電話をくれた患者の場合: 折り返しのお電話ありがとうございます。\n・患者以外の場合: ご用件をお伺いしてもよろしいでしょうか／かしこまりました。' },
-      { id: 'd1-3', text: '【用件確認の流れ】\nご用件をお伺いしてもよろしいでしょうか\n◯◯のお問い合わせですね（用件は必ず復唱する）' }
+      { id: 'd1-1', text: '【第一声（時間帯別）】\n◆午前中\nおはようございます\n◆10:30以降\nはい、◯◯薬局です' },
+      { id: 'd1-2', text: '【用件確認の前に（該当する場合）】\n◆患者の場合\n恐れ入りますが、お名前と生年月日をお伺いしてもよろしいでしょうか\n◆折り返し電話をくれた患者の場合\n折り返しのお電話ありがとうございます。\n◆患者以外の場合\nご用件をお伺いしてもよろしいでしょうか／かしこまりました。' },
+      { id: 'd1-3', text: '【用件確認の流れ】\nご用件をお伺いしてもよろしいでしょうか\n◯◯のお問い合わせですね\n※用件は必ず復唱する' }
     ]
   },
   {
@@ -530,7 +535,7 @@ const DEFAULT_CATEGORIES = [
     id: 'giji-shokai', name: '疑義照会', icon: 'activity', order: 3, kind: 'phrases', isDefault: true,
     phrases: [
       { id: 'd3-0a', text: '【枕詞編】\n・お世話になっております。◯◯薬局の◯◯でございます\n・お忙しいところ恐れ入ります。◯◯薬局の◯◯と申します。' },
-      { id: 'd3-2', text: '【本題の流れ】\n◯◯様の処方の件でお伺いしたいのですが、今お時間よろしいでしょうか\n（ここで確認したい内容を簡潔に伝える）' },
+      { id: 'd3-2', text: '【本題の流れ】\n◯◯様の処方の件でお伺いしたいのですが、今お時間よろしいでしょうか\n※ここで確認したい内容を簡潔に伝える' },
       { id: 'd3-3', text: '【締めの挨拶】\n・ご確認いただきありがとうございました。よろしくお願いいたします。お電話失礼いたします。\n・ご対応ありがとうございました。よろしくお願いいたします。お電話失礼いたします。' },
       { id: 'd3-4', text: '◆具体例：併用に関する疑義照会（テリパラチド×デノタスチュアブル）\n◯◯クリニックの先生、お忙しいところ恐れ入ります。△△薬局の薬剤師の◯◯です。\n本日、当局にて◯◯様にテリパラチドが処方されたのですが、先生のところで処方されているデノタスチュアブルとの併用についてご相談したくお電話いたしました。\nテリパラチドの添付文書上、血清カルシウム値を上昇させるおそれがあるため、デノタスのようなカルシウム・ビタミンD製剤との併用は避けることが望ましい旨の記載がございます。\n患者様の安全のため、デノタスの一時休薬や、カルシウム値のモニタリング等についてご指示をいただけないでしょうか。' }
     ]
@@ -545,8 +550,9 @@ const DEFAULT_CATEGORIES = [
           question: '担当者の状況は？',
           note: '※ 離席：席を外しているだけで、薬局内にいる状態（例：他のお客様対応中、少し席を外している）→ 比較的すぐ戻る想定\n外出：薬局の外に出ている状態（例：配達、外部の用事など）→ いつ戻るか離席より読みにくい',
           options: [
-            { label: '離席', text: '◯◯は今、席を外しております。\n◯◯は今、患者様対応中です', next: 'action' },
-            { label: '外出', text: '◯◯は、外出しております', next: 'action' }
+            { label: '離席', text: '◆単に席を外している場合\n◯◯は今、席を外しております\n◆他の患者様対応中の場合\n◯◯は今、患者様対応中です', next: 'action' },
+            { label: '外出', text: '◯◯は、外出しております', next: 'action' },
+            { label: '休み', text: '◯◯は、本日お休みを頂戴しております', next: 'action' }
           ]
         },
         action: {
@@ -591,15 +597,13 @@ const DEFAULT_CATEGORIES = [
   {
     id: 'hang-up', name: '電話を切りにくい時の対応', icon: 'hand', order: 7, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd7-1', text: '（5秒ほど待ってから）お先に失礼します' },
-      { id: 'd7-2', text: 'こちらから失礼いたします' },
-      { id: 'd7-3', text: 'お電話失礼いたします' }
+      { id: 'd7-1', text: '・（5秒ほど待ってから）お先に失礼します\n・こちらから失礼いたします\n・お電話失礼いたします' }
     ]
   },
   {
     id: 'transfer', name: '担当者へ取り次ぐ時', icon: 'shuffle', order: 8, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd8-1', text: '担当の者におつなぎいたしますので、少々お待ちいただけますでしょうか\n担当者へ　◯◯様より、〜のお問い合わせですと伝える\n恐れ入ります、もう少々お待ちいただけますでしょうか（保留が長引く場合）' }
+      { id: 'd8-1', text: '担当の者におつなぎいたしますので、少々お待ちいただけますでしょうか\n担当者へ　◯◯様より、〜のお問い合わせですと伝える\n◆保留が長引く場合\n恐れ入ります、もう少々お待ちいただけますでしょうか' }
     ]
   },
   {
@@ -649,7 +653,7 @@ const DEFAULT_CATEGORIES = [
             'お薬の名前、もしくはお薬手帳はお手元にございますか',
             '念のため、お名前と生年月日を伺ってもよろしいでしょうか',
             'お伺いした内容を踏まえて、こちらでご案内いたします',
-            '（症状・お薬の内容を確認し、必要な回答・注意事項を伝える）',
+            '※症状・お薬の内容を確認し、必要な回答・注意事項を伝える',
             '引き続き気になる症状がございましたら、いつでもご連絡ください'
           ]
         }
@@ -675,7 +679,8 @@ const DEFAULT_CATEGORIES = [
           steps: [
             '処方箋のご送信ありがとうございます。',
             '現在、◯◯が一部在庫切れとなっております。',
-            '明日の昼頃には入荷し、すべて揃う予定です。（時期は状況に応じて書き換えてください）',
+            '明日の昼頃には入荷し、すべて揃う予定です。',
+            '※時期は状況に応じて書き換えてください',
             'お薬のお渡し準備が整いましたら、改めてご連絡（または通知）いたします。',
             'ご来局の際は、処方箋の『原本』とお薬手帳を忘れずにお持ちください'
           ]
@@ -706,7 +711,8 @@ const DEFAULT_CATEGORIES = [
   {
     id: 'outbound-call', name: 'こちらから電話する時', icon: 'callOut', order: 12, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd12-1', text: 'お世話になっております。わたくし◯◯薬局の◯◯と申します。\n◯◯様につないでいただけますか？\n◆担当者が不在だった場合\n伝言を言づけてもよろしいでしょうか\n◯◯このようにお伝えいただけないでしょうか' }
+      { id: 'd12-1', text: 'お世話になっております。わたくし◯◯薬局の◯◯と申します。\n◯◯様につないでいただけますか？\n◆担当者が不在だった場合\n伝言を言づけてもよろしいでしょうか\n◯◯このようにお伝えいただけないでしょうか' },
+      { id: 'd12-2', text: '※始業直後・終業間際・正午〜13時頃の昼休みの時間帯はできるだけ電話を避ける\n◆どうしても電話をかける必要がある場合\nお忙しい時間に申し訳ございません' }
     ]
   },
   {
@@ -738,7 +744,7 @@ const DEFAULT_CATEGORIES = [
     id: 'pregnancy', name: '妊娠・授乳中のお薬相談', icon: 'heart', order: 15, kind: 'phrases', isDefault: true,
     phrases: [
       { id: 'd15-1', text: '【聞き取り】\n現在の妊娠週数、もしくは授乳中かどうかを伺ってもよろしいでしょうか\n今回ご相談されたいお薬のお名前を伺ってもよろしいでしょうか\nただいま確認いたしますので少々お待ちください' },
-      { id: 'd15-2', text: '（調べて答えた後）\n念のため、かかりつけの産婦人科の先生にもお薬の服薬情報を共有いただけますと安心です\nまたなにかございましたら、いつでもご連絡ください。\nお電話失礼いたします。' }
+      { id: 'd15-2', text: '【調べて答えた後】\n念のため、かかりつけの産婦人科の先生にもお薬の服薬情報を共有いただけますと安心です\nまたなにかございましたら、いつでもご連絡ください。\nお電話失礼いたします。' }
     ]
   },
   {
@@ -751,7 +757,7 @@ const DEFAULT_CATEGORIES = [
   {
     id: 'prescription-expiry', name: '処方箋の有効期限・キャンセル対応', icon: 'document', order: 17, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd17-1', text: '【有効期限切れ】\n本日は処方箋をお持ちいただき、ありがとうございます\n本日は処方せんをお持ちして来局いただきありがとうございます。\n恐れ入りますが、処方箋の有効期限は発行日を含めて4日以内となっております\n申し訳ございませんが期限が切れておりますので、恐れ入りますが再度患者より医療機関にてご確認いただけますでしょうか\n（処方箋の期限切れについては、薬局から医療機関へ問い合わせはできない）' },
+      { id: 'd17-1', text: '【有効期限切れ】\n本日は処方せんをお持ちして来局いただきありがとうございます。\n恐れ入りますが、処方箋の有効期限は発行日を含めて4日以内となっております\n申し訳ございませんが期限が切れておりますので、恐れ入りますが再度患者より医療機関にてご確認いただけますでしょうか\n※処方箋の期限切れについては、薬局から医療機関へ問い合わせはできない' },
       { id: 'd17-2', text: '【キャンセル対応】\nかしこまりました、こちらの処方内容はキャンセルとして承ります\nご来局されない場合、お薬は破棄させていただいてもよろしいでしょうか' }
     ]
   },
@@ -768,11 +774,36 @@ const DEFAULT_CATEGORIES = [
     ]
   },
   {
-    id: 'inventory-discrepancy', name: '棚卸差異・お薬取り違えの確認', icon: 'clipboard', order: 20, kind: 'phrases', isDefault: true,
+    id: 'poor-connection', name: '声が聞き取りにくい時の対応', icon: 'headphones', order: 20, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd20-1', text: '◆標準的（間違いを断定せず、お手元の確認をお願いする）\nいつもお世話になっております、◯◯薬局の◯◯です。\n◯◯様、今少しだけお時間はよろしいでしょうか？\n実は、本日薬局の在庫を点検したところ、前回お渡しした「◯◯」というお薬の規格（成分の量）を、私どもの不手際で取り違えてお渡ししてしまった可能性が出てまいりました。\n大変お手数ですが、今お手元にあるお薬のシートに「◯◯」と書いてあるか、「◯◯」と書いてあるか、ご確認いただくことは可能でしょうか？\n◆謝罪重視（ほぼ間違いないと確信している場合）\nお忙しいところ恐れ入ります、◯◯薬局の◯◯です。\n先日お渡しした「◯◯」について、こちらの確認不足で、本来お渡しするはずの◯◯ではなく、誤って◯◯をお渡ししてしまった可能性が非常に高いことが判明いたしました。\nせっかくご来局いただいたのに、こちらの不手際でご不安な思いをさせてしまい、誠に申し訳ございません。\n正しいお薬を、すぐにお届け（または交換）させていただきたく存じます。' },
-      { id: 'd20-2', text: '【確認・対応のポイント】\nシートに印字されている数字と残りの錠数を確認する\n「1〜2回飲んでしまっていても、急激に体調が悪化する種類ではない」と伝え、安心していただく\n本来の処方がどちらか患者様が混乱している場合は「本来は◯◯を服用する予定でした」とはっきり伝える\n今後の対応（自宅へ届けるか、郵送するか、来局していただくか）を伝える' }
+      { id: 'd20-1', text: '◆声が遠く感じる場合\n申し訳ございません、少々お電話が遠いようです\n◆聞き取れなかった場合\n恐れ入りますが、もう一度お伺いしてもよろしいでしょうか' }
     ]
+  },
+  {
+    id: 'inventory-discrepancy', name: '棚卸差異・お薬取り違えの確認', icon: 'clipboard', order: 21, kind: 'flow', isDefault: true,
+    phrases: [],
+    flow: {
+      start: 'chooseApproach',
+      nodes: {
+        chooseApproach: {
+          question: 'どちらの対応にしますか？',
+          options: [
+            { label: '標準的（断定せず、お手元の確認をお願いする）', text: 'いつもお世話になっております、◯◯薬局の◯◯です。\n◯◯様、今少しだけお時間はよろしいでしょうか？\n実は、本日薬局の在庫を点検したところ、前回お渡しした「◯◯」というお薬の規格（成分の量）を、私どもの不手際で取り違えてお渡ししてしまった可能性が出てまいりました。\n大変お手数ですが、今お手元にあるお薬のシートに「◯◯」と書いてあるか、「◯◯」と書いてあるか、ご確認いただくことは可能でしょうか？', next: 'standard' },
+            { label: '謝罪重視（ほぼ間違いないと確信している場合）', text: 'お忙しいところ恐れ入ります、◯◯薬局の◯◯です。\n先日お渡しした「◯◯」について、こちらの確認不足で、本来お渡しするはずの◯◯ではなく、誤って◯◯をお渡ししてしまった可能性が非常に高いことが判明いたしました。\nせっかくご来局いただいたのに、こちらの不手際でご不安な思いをさせてしまい、誠に申し訳ございません。\n正しいお薬を、すぐにお届け（または交換）させていただきたく存じます。', next: 'apology' }
+          ]
+        },
+        standard: {
+          options: [
+            { label: '確認・対応のポイントを見る', text: '※シートに印字されている数字と残りの錠数を確認する\n※「1〜2回飲んでしまっていても、急激に体調が悪化する種類ではない」と伝え、安心していただく\n※本来の処方がどちらか患者様が混乱している場合は「本来は◯◯を服用する予定でした」とはっきり伝える\n※今後の対応（自宅へ届けるか、郵送するか、来局していただくか）を伝える', next: null }
+          ]
+        },
+        apology: {
+          options: [
+            { label: '確認・対応のポイントを見る', text: '※シートに印字されている数字と残りの錠数を確認する\n※「1〜2回飲んでしまっていても、急激に体調が悪化する種類ではない」と伝え、安心していただく\n※本来の処方がどちらか患者様が混乱している場合は「本来は◯◯を服用する予定でした」とはっきり伝える\n※今後の対応（自宅へ届けるか、郵送するか、来局していただくか）を伝える', next: null }
+          ]
+        }
+      }
+    }
   }
 ];
 
@@ -1213,6 +1244,31 @@ function renderCategoryDetail(catId){
   if (cat.kind === 'flow') renderFlow(cat);
 }
 
+function needsFlowWrapper(text){
+  const lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  if (!lines.length) return true;
+  const first = lines[0];
+  if (/^【.*】$/.test(first)) return false;
+  if (first.indexOf('◆') === 0) return false;
+  if (first.indexOf('・') === 0) return false;
+  return true;
+}
+
+/* ※ で始まる行は「スタッフ向けメモ（声に出さない・チェック事項）」として分離する */
+function extractStaffNotes(lines){
+  const notes = [];
+  const items = lines.filter(function(l){
+    if (l.trim().indexOf('※') === 0){ notes.push(l.trim().replace(/^※/, '')); return false; }
+    return true;
+  });
+  return { items: items, notes: notes };
+}
+
+function renderStaffNotes(notes){
+  if (!notes.length) return '';
+  return '<div class="phrase-note">' + notes.map(function(n){ return '📎 ' + h(n); }).join('<br>') + '</div>';
+}
+
 function renderPhraseBody(cat, rawText){
   const text = renderPhraseText(cat, rawText);
   const lines = text.split('\n');
@@ -1222,6 +1278,9 @@ function renderPhraseBody(cat, rawText){
     heading = lines[0].trim();
     items = lines.slice(1);
   }
+  const extracted = extractStaffNotes(items);
+  items = extracted.items;
+  const notes = extracted.notes;
   const hasBranches = items.some(function(l){ return l.trim().indexOf('◆') === 0; });
   const isChoice = !hasBranches && items.length > 0 && items[0].trim().indexOf('・') === 0;
   let html = '';
@@ -1243,7 +1302,7 @@ function renderPhraseBody(cat, rawText){
       }
     });
     if (preamble.length > 1){
-      html += '<ol class="phrase-steps">' + preamble.map(function(l, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span>' + h(l) + '</li>'; }).join('') + '</ol>';
+      html += '<ol class="phrase-steps">' + preamble.map(function(l, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span><span class="step-txt">' + h(l) + '</span></li>'; }).join('') + '</ol>';
     } else if (preamble.length === 1){
       html += '<div class="phrase-preamble">' + h(preamble[0]) + '</div>';
     }
@@ -1257,11 +1316,12 @@ function renderPhraseBody(cat, rawText){
     if (isChoice){
       html += '<div class="phrase-choices">' + items.map(function(l){ return '<div class="phrase-choice">' + h(l.trim().replace(/^・/, '')) + '</div>'; }).join('') + '</div>';
     } else {
-      html += '<ol class="phrase-steps">' + items.map(function(l, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span>' + h(l) + '</li>'; }).join('') + '</ol>';
+      html += '<ol class="phrase-steps">' + items.map(function(l, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span><span class="step-txt">' + h(l) + '</span></li>'; }).join('') + '</ol>';
     }
   } else {
     html += h(items[0] || '');
   }
+  html += renderStaffNotes(notes);
   return html;
 }
 
@@ -1287,6 +1347,14 @@ function renderPhraseListInto(cat){
           '<button class="phrase-del" data-id="' + h(p.id) + '">✕</button>' +
           '</div>' : '') + '</li>';
     }).join('');
+
+    list.querySelectorAll('.phrase-edit-textarea').forEach(function(ta){
+      ta.style.height = Math.max(ta.scrollHeight, 320) + 'px';
+      ta.addEventListener('input', function(){
+        ta.style.height = 'auto';
+        ta.style.height = ta.scrollHeight + 'px';
+      });
+    });
 
     list.querySelectorAll('.phrase-del').forEach(function(btn){
       btn.onclick = function(){
@@ -1346,14 +1414,20 @@ function renderFlow(cat){
   }
 
   if (!fstate.leaf && lastCrumb && lastCrumb.text){
-    html += '<div class="flow-phrase">' + h(lastCrumb.text) + '</div>';
+    html += needsFlowWrapper(lastCrumb.text)
+      ? '<div class="flow-phrase">' + renderPhraseBody(cat, lastCrumb.text) + '</div>'
+      : renderPhraseBody(cat, lastCrumb.text);
   }
 
   if (fstate.leaf){
-    html += '<div class="flow-phrase">' + h(fstate.leaf.text || '') + '</div>';
+    html += needsFlowWrapper(fstate.leaf.text || '')
+      ? '<div class="flow-phrase">' + renderPhraseBody(cat, fstate.leaf.text || '') + '</div>'
+      : renderPhraseBody(cat, fstate.leaf.text || '');
   } else {
     if (node.steps){
-      html += '<ol class="flow-steps">' + node.steps.map(function(s, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span>' + h(s) + '</li>'; }).join('') + '</ol>';
+      const extracted = extractStaffNotes(node.steps);
+      html += '<ol class="flow-steps">' + extracted.items.map(function(s, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span><span class="step-txt">' + h(s) + '</span></li>'; }).join('') + '</ol>';
+      html += renderStaffNotes(extracted.notes);
     }
     if (node.options){
       html += '<div class="flow-options">' + node.options.map(function(o, idx){
