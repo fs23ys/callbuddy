@@ -238,6 +238,7 @@
   .phrase-branch-body{ font-size:14px; line-height:1.7; flex:1; min-width:120px; }
   .phrase-del{ border:none; background:none; color: var(--danger); font-size:15px; padding:2px 4px; line-height:1; }
   .phrase-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; }
+  .basic-phrase-actions{ display:flex; flex-direction:row; gap:6px; align-items:center; flex-shrink:0; }
   .phrase-edit-btn{ border:none; background:none; color: var(--primary-deep); font-size:11.5px; font-weight:700; padding:2px 4px; }
   .phrase-item.editing{ align-items:stretch; }
   .phrase-edit-textarea{ width:100%; min-height:320px; padding:9px 12px; border-radius:10px; border:1px solid var(--primary); font-size:14px; font-family:inherit; resize:vertical; line-height:1.6; box-sizing:border-box; }
@@ -1637,7 +1638,7 @@ function renderBasicListInto(sec, list){
         '</div></div></li>';
     }
     return '<li class="phrase-item"><div class="txt">' + renderPhraseBody({}, p.text) + '</div>' +
-      (canEdit() ? '<div class="phrase-actions">' +
+      (canEdit() ? '<div class="basic-phrase-actions">' +
         '<button class="phrase-edit-btn basic-phrase-up" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '"' + (idx === 0 ? ' disabled' : '') + '>↑</button>' +
         '<button class="phrase-edit-btn basic-phrase-down" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '"' + (idx === phrases.length - 1 ? ' disabled' : '') + '>↓</button>' +
         '<button class="phrase-edit-btn basic-phrase-edit-btn" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">編集</button>' +
