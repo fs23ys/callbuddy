@@ -167,6 +167,9 @@
   .card{ background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 14px; }
   .card h3{ margin:0 0 10px; font-size:15px; color: var(--primary-deep); display:flex; align-items:center; gap:6px; }
   .card h3 .num{ background: var(--step-bg); color: var(--step-text); width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .basic-section-header{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  .basic-section-header h3{ margin:0; flex:1; }
+  .basic-section-actions{ display:flex; gap:2px; flex-shrink:0; }
 
   /* ---------- Category grid ---------- */
   .category-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; }
@@ -479,12 +482,6 @@ const DEFAULT_BASIC_RULES = [
     id: 'aizuchi', title: '会話中に使える相槌フレーズ',
     phrases: [
       { id: 'b3-1', text: 'さようでございますね' }
-    ]
-  },
-  {
-    id: 'manners', title: '電話に出るタイミングのマナー',
-    phrases: [
-      { id: 'b4-1', text: '3コールを超えて電話に出ると失礼な印象を与えかねないため、出るのが遅れた時は「大変お待たせしてしまい申し訳ございません」と一言添える' }
     ]
   }
 ];
@@ -854,7 +851,9 @@ const state = {
   basicRules: [],
   basicRulesLoaded: false,
   basicRulesExists: false,
-  editingBasicPhrase: null
+  editingBasicPhrase: null,
+  editingBasicSectionTitle: null,
+  addingBasicSection: false
 };
 let seedAttempted = false;
 let basicRulesSeedAttempted = false;
@@ -1448,13 +1447,13 @@ function renderBasicRulesPanel(){
   const sections = getBasicRules();
   wrap.innerHTML = sections.map(function(sec, idx){
     return '<div class="card">' +
-      '<h3><span class="num">' + (idx + 1) + '</span>' + h(sec.title) + '</h3>' +
+      renderBasicSectionHeader(sec, idx) +
       '<div id="basicPhraseList-' + h(sec.id) + '"></div>' +
       (canEdit() ? '<div class="add-phrase-form">' +
         '<textarea class="basic-new-phrase-input" data-section="' + h(sec.id) + '" placeholder="' + (BASIC_TABLE_SECTIONS[sec.id] ? '例: ' + h(BASIC_TABLE_SECTIONS[sec.id].headers[0]) + 'の内容 → ' + h(BASIC_TABLE_SECTIONS[sec.id].headers[1]) + 'の内容' : '項目を追加...（複数行入力できます）') + '" rows="2"></textarea>' +
         '<button class="btn btn-sm basic-add-phrase-btn" data-section="' + h(sec.id) + '">追加</button></div>' : '') +
       '</div>';
-  }).join('');
+  }).join('') + (canEdit() ? renderAddSectionCard() : '');
 
   sections.forEach(function(sec){
     renderBasicPhraseListInto(sec);
@@ -1468,6 +1467,89 @@ function renderBasicRulesPanel(){
       if (ok) ta.value = '';
     };
   });
+
+  wrap.querySelectorAll('.basic-section-edit-btn').forEach(function(btn){
+    btn.onclick = function(){
+      state.editingBasicSectionTitle = btn.dataset.section;
+      renderBasicRulesPanel();
+    };
+  });
+  wrap.querySelectorAll('.basic-section-del-btn').forEach(function(btn){
+    btn.onclick = function(){
+      if (!confirm('この項目を削除します。元に戻せません。よろしいですか？')) return;
+      deleteBasicRuleSection(btn.dataset.section);
+    };
+  });
+  wrap.querySelectorAll('[data-act="basic-title-cancel"]').forEach(function(btn){
+    btn.onclick = function(){
+      state.editingBasicSectionTitle = null;
+      renderBasicRulesPanel();
+    };
+  });
+  wrap.querySelectorAll('[data-act="basic-title-save"]').forEach(function(btn){
+    btn.onclick = async function(){
+      const input = wrap.querySelector('.basic-section-title-input[data-section="' + btn.dataset.section + '"]');
+      const ok = await updateBasicRuleSectionTitle(btn.dataset.section, input.value);
+      if (ok) state.editingBasicSectionTitle = null;
+      renderBasicRulesPanel();
+    };
+  });
+
+  const addBtn = document.getElementById('addBasicSectionBtn');
+  if (addBtn){
+    addBtn.onclick = function(){
+      state.addingBasicSection = true;
+      renderBasicRulesPanel();
+    };
+  }
+  const cancelAddBtn = document.getElementById('cancelAddSectionBtn');
+  if (cancelAddBtn){
+    cancelAddBtn.onclick = function(){
+      state.addingBasicSection = false;
+      renderBasicRulesPanel();
+    };
+  }
+  const confirmAddBtn = document.getElementById('confirmAddSectionBtn');
+  if (confirmAddBtn){
+    confirmAddBtn.onclick = async function(){
+      const input = document.getElementById('newBasicSectionTitle');
+      const ok = await addBasicRuleSection(input.value);
+      if (ok) state.addingBasicSection = false;
+      renderBasicRulesPanel();
+    };
+  }
+}
+
+function renderBasicSectionHeader(sec, idx){
+  if (state.editingBasicSectionTitle === sec.id){
+    return '<div class="basic-section-header">' +
+      '<input type="text" class="flow-edit-input basic-section-title-input" data-section="' + h(sec.id) + '" value="' + h(sec.title) + '">' +
+      '</div>' +
+      '<div class="phrase-edit-actions" style="margin-bottom:10px;">' +
+      '<button class="btn btn-sm" data-section="' + h(sec.id) + '" data-act="basic-title-save">保存</button>' +
+      '<button class="btn secondary btn-sm" data-section="' + h(sec.id) + '" data-act="basic-title-cancel">キャンセル</button>' +
+      '</div>';
+  }
+  return '<div class="basic-section-header">' +
+    '<h3><span class="num">' + (idx + 1) + '</span>' + h(sec.title) + '</h3>' +
+    (canEdit() ? '<div class="basic-section-actions">' +
+      '<button class="phrase-edit-btn basic-section-edit-btn" data-section="' + h(sec.id) + '">編集</button>' +
+      '<button class="phrase-del basic-section-del-btn" data-section="' + h(sec.id) + '">✕</button>' +
+      '</div>' : '') +
+    '</div>';
+}
+
+function renderAddSectionCard(){
+  if (state.addingBasicSection){
+    return '<div class="card">' +
+      '<label>新しい項目のタイトル</label>' +
+      '<input type="text" id="newBasicSectionTitle" class="flow-edit-input" placeholder="例: 折り返し電話のマナー">' +
+      '<div class="phrase-edit-actions" style="margin-top:10px;">' +
+      '<button class="btn btn-sm" id="confirmAddSectionBtn">追加</button>' +
+      '<button class="btn secondary btn-sm" id="cancelAddSectionBtn">キャンセル</button>' +
+      '</div></div>';
+  }
+  return '<div class="add-category-card" id="addBasicSectionBtn">+ 新しい項目を追加</div>';
 }
 
 const BASIC_TABLE_SECTIONS = {
@@ -1505,7 +1587,7 @@ function renderBasicTableInto(sec, wrap){
   const conf = BASIC_TABLE_SECTIONS[sec.id];
   const phrases = sec.phrases || [];
   const colCount = canEdit() ? 3 : 2;
-  const rowsHtml = phrases.map(function(p){
+  const rowsHtml = phrases.map(function(p, idx){
     const isEditingThis = state.editingBasicPhrase && state.editingBasicPhrase.sectionId === sec.id && state.editingBasicPhrase.phraseId === p.id;
     if (isEditingThis){
       return '<tr><td colspan="' + colCount + '" class="table-edit-cell">' +
@@ -1524,8 +1606,10 @@ function renderBasicTableInto(sec, wrap){
       '<td>' + colAHtml + '</td>' +
       '<td>' + colBHtml + '</td>' +
       (canEdit() ? '<td class="table-row-actions">' +
-        '<button class="basic-phrase-edit-btn" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">編集</button>' +
-        '<button class="basic-phrase-del" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">✕</button>' +
+        '<button class="phrase-edit-btn basic-phrase-up" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '"' + (idx === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button class="phrase-edit-btn basic-phrase-down" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '"' + (idx === phrases.length - 1 ? ' disabled' : '') + '>↓</button>' +
+        '<button class="phrase-edit-btn basic-phrase-edit-btn" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">編集</button>' +
+        '<button class="phrase-del basic-phrase-del" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">✕</button>' +
         '</td>' : '') +
       '</tr>';
   }).join('');
@@ -1541,7 +1625,7 @@ function renderBasicListInto(sec, list){
     list.innerHTML = '<div class="empty-hint">項目はまだありません。</div>';
     return;
   }
-  list.innerHTML = '<ul class="phrase-list">' + phrases.map(function(p){
+  list.innerHTML = '<ul class="phrase-list">' + phrases.map(function(p, idx){
     const isEditingThis = state.editingBasicPhrase && state.editingBasicPhrase.sectionId === sec.id && state.editingBasicPhrase.phraseId === p.id;
     if (isEditingThis){
       return '<li class="phrase-item editing">' +
@@ -1554,8 +1638,10 @@ function renderBasicListInto(sec, list){
     }
     return '<li class="phrase-item"><div class="txt">' + renderPhraseBody({}, p.text) + '</div>' +
       (canEdit() ? '<div class="phrase-actions">' +
-        '<button class="basic-phrase-edit-btn" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">編集</button>' +
-        '<button class="basic-phrase-del" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">✕</button>' +
+        '<button class="phrase-edit-btn basic-phrase-up" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '"' + (idx === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button class="phrase-edit-btn basic-phrase-down" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '"' + (idx === phrases.length - 1 ? ' disabled' : '') + '>↓</button>' +
+        '<button class="phrase-edit-btn basic-phrase-edit-btn" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">編集</button>' +
+        '<button class="phrase-del basic-phrase-del" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">✕</button>' +
         '</div>' : '') + '</li>';
   }).join('') + '</ul>';
 
@@ -1576,6 +1662,12 @@ function wireBasicPhraseHandlers(sec, wrap){
       const phraseObj = (sec.phrases || []).find(function(p){ return p.id === btn.dataset.id; });
       if (phraseObj) deleteBasicRulePhrase(btn.dataset.section, phraseObj);
     };
+  });
+  wrap.querySelectorAll('.basic-phrase-up').forEach(function(btn){
+    btn.onclick = function(){ moveBasicRulePhrase(btn.dataset.section, btn.dataset.id, -1); };
+  });
+  wrap.querySelectorAll('.basic-phrase-down').forEach(function(btn){
+    btn.onclick = function(){ moveBasicRulePhrase(btn.dataset.section, btn.dataset.id, 1); };
   });
   wrap.querySelectorAll('.basic-phrase-edit-btn').forEach(function(btn){
     btn.onclick = function(){
@@ -1862,6 +1954,22 @@ async function deleteBasicRulePhrase(sectionId, phraseObj){
   }catch(e){ showToast('削除に失敗しました: ' + e.message, 'error'); }
 }
 
+async function moveBasicRulePhrase(sectionId, phraseId, direction){
+  if (!canEdit()) return;
+  const sections = JSON.parse(JSON.stringify(getBasicRules()));
+  const sec = sections.find(function(s){ return s.id === sectionId; });
+  if (!sec) return;
+  const idx = (sec.phrases || []).findIndex(function(p){ return p.id === phraseId; });
+  const swapIdx = idx + direction;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= sec.phrases.length) return;
+  const tmp = sec.phrases[idx];
+  sec.phrases[idx] = sec.phrases[swapIdx];
+  sec.phrases[swapIdx] = tmp;
+  try{
+    await setDoc(doc(db, 'meta', 'basicRules'), { sections: sections });
+  }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); }
+}
+
 async function updateBasicRulePhrase(sectionId, phraseId, newText){
   if (!canEdit()) return false;
   newText = (newText || '').trim();
@@ -1870,6 +1978,43 @@ async function updateBasicRulePhrase(sectionId, phraseId, newText){
   const sec = sections.find(function(s){ return s.id === sectionId; });
   if (!sec) return false;
   sec.phrases = (sec.phrases || []).map(function(p){ return p.id === phraseId ? { id: p.id, text: newText } : p; });
+  try{
+    await setDoc(doc(db, 'meta', 'basicRules'), { sections: sections });
+    showToast('保存しました', 'success');
+    return true;
+  }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); return false; }
+}
+
+async function addBasicRuleSection(title){
+  if (!canEdit()) return false;
+  title = (title || '').trim();
+  if (!title){ showToast('タイトルを入力してください', 'error'); return false; }
+  const sections = JSON.parse(JSON.stringify(getBasicRules()));
+  sections.push({ id: genId(), title: title, phrases: [] });
+  try{
+    await setDoc(doc(db, 'meta', 'basicRules'), { sections: sections });
+    showToast('項目を追加しました', 'success');
+    return true;
+  }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); return false; }
+}
+
+async function deleteBasicRuleSection(sectionId){
+  if (!canEdit()) return;
+  const sections = JSON.parse(JSON.stringify(getBasicRules())).filter(function(s){ return s.id !== sectionId; });
+  try{
+    await setDoc(doc(db, 'meta', 'basicRules'), { sections: sections });
+    showToast('削除しました', 'success');
+  }catch(e){ showToast('削除に失敗しました: ' + e.message, 'error'); }
+}
+
+async function updateBasicRuleSectionTitle(sectionId, newTitle){
+  if (!canEdit()) return false;
+  newTitle = (newTitle || '').trim();
+  if (!newTitle){ showToast('タイトルを入力してください', 'error'); return false; }
+  const sections = JSON.parse(JSON.stringify(getBasicRules()));
+  const sec = sections.find(function(s){ return s.id === sectionId; });
+  if (!sec) return false;
+  sec.title = newTitle;
   try{
     await setDoc(doc(db, 'meta', 'basicRules'), { sections: sections });
     showToast('保存しました', 'success');
