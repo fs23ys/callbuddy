@@ -61,9 +61,14 @@
     --ok-text: #2e7d4f;
     --ng-bg: #ffe1e4;
     --ng-text: #c1495a;
+    --step-bg: #eef1f4;
+    --step-text: #5b6b7a;
     --danger: #e57373;
     --shadow: 0 2px 10px rgba(90,130,160,0.12);
     --radius: 16px;
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
   }
   *{ box-sizing: border-box; }
   html,body{ margin:0; padding:0; }
@@ -161,7 +166,7 @@
   /* ---------- Cards / sections ---------- */
   .card{ background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 14px; }
   .card h3{ margin:0 0 10px; font-size:15px; color: var(--primary-deep); display:flex; align-items:center; gap:6px; }
-  .card h3 .num{ background:var(--primary); color:#fff; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; }
+  .card h3 .num{ background: var(--step-bg); color: var(--step-text); width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
 
   .cushion-list{ display:flex; flex-wrap:wrap; gap:8px; }
   .cushion-chip{ background: var(--surface-2); border:1px solid var(--border); padding:7px 14px; border-radius: 999px; font-size:13.5px; }
@@ -211,13 +216,27 @@
   .phrase-item{ display:flex; align-items:flex-start; gap:8px; background: var(--surface); border:1px solid var(--border); padding:10px 12px; border-radius:12px; font-size:14px; line-height:1.8; box-shadow: var(--shadow); }
   .phrase-item .txt{ flex:1; white-space:pre-wrap; }
   .phrase-heading{ font-weight:700; color: var(--primary-deep); font-size:15px; margin-bottom:8px; }
-  .phrase-steps{ list-style:decimal; margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; }
+  .phrase-steps{
+    list-style:none; margin:0; padding-left:0;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .phrase-steps li{
+    position:relative; padding-left:30px; min-height:22px;
+  }
+  .phrase-steps li .step-num{
+    position:absolute; left:0; top:0;
+    width:20px; height:20px; border-radius:50%;
+    background: var(--step-bg); color: var(--step-text);
+    font-weight:700; font-size:11.5px;
+    display:flex; align-items:center; justify-content:center;
+    line-height:1;
+  }
   .phrase-choices{ display:flex; flex-direction:column; gap:8px; }
   .phrase-choice{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
   .phrase-preamble{ margin-bottom:10px; }
   .phrase-branches{ display:flex; flex-direction:column; gap:10px; }
   .phrase-branch{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
-  .phrase-branch-badge{ display:inline-block; background: var(--accent); color:#8a4b12; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:999px; margin-bottom:8px; }
+  .phrase-branch-badge{ display:inline-block; background: var(--accent); color:#8a4b12; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; margin-bottom:8px; letter-spacing:0.2px; }
   .phrase-branch-body{ font-size:14px; line-height:1.7; }
   .phrase-del{ border:none; background:none; color: var(--danger); font-size:15px; padding:2px 4px; line-height:1; }
   .phrase-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; }
@@ -240,15 +259,23 @@
   /* ---------- Flow ---------- */
   .flow-box{ background: var(--surface-2); border-radius: 14px; padding:16px; margin-bottom:14px; }
   .flow-breadcrumb{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
-  .flow-crumb{ font-size:12px; background:var(--primary); color:#fff; padding:4px 10px; border-radius:999px; }
+  .flow-crumb{ font-size:11.5px; font-weight:700; background:var(--primary); color:#fff; padding:4px 10px; border-radius:999px; letter-spacing:0.2px; }
   .flow-question{ font-weight:700; font-size:14px; margin-bottom:10px; color: var(--primary-deep); }
   .flow-note{ font-size:12px; color: var(--text-light); white-space:pre-wrap; line-height:1.6; margin:-4px 0 12px; }
   .flow-phrase{ background:#fff; border-left:4px solid var(--primary-dark); padding:10px 14px; border-radius:8px; font-size:14.5px; margin-bottom:12px; white-space:pre-wrap; line-height:1.7; }
   .flow-options{ display:flex; flex-direction:column; gap:8px; }
   .flow-option-btn{ text-align:left; background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:14px; font-weight:700; color: var(--text); box-shadow: var(--shadow); }
   .flow-option-btn:hover{ background: var(--primary); color:#fff; }
-  .flow-steps{ list-style:decimal; padding-left:20px; margin:0; display:flex; flex-direction:column; gap:10px; }
-  .flow-steps li{ background:#fff; padding:10px 12px; border-radius:8px; font-size:14px; }
+  .flow-steps{ list-style:none; padding-left:0; margin:0; display:flex; flex-direction:column; gap:10px; }
+  .flow-steps li{ background:#fff; padding:10px 12px 10px 38px; border-radius:8px; font-size:14px; position:relative; }
+  .flow-steps li .step-num{
+    position:absolute; left:10px; top:10px;
+    width:20px; height:20px; border-radius:50%;
+    background: var(--step-bg); color: var(--step-text);
+    font-weight:700; font-size:11.5px;
+    display:flex; align-items:center; justify-content:center;
+    line-height:1;
+  }
   .flow-restart{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
 
   /* ---------- Modal ---------- */
@@ -582,7 +609,11 @@ const DEFAULT_CATEGORIES = [
       start: 'intake',
       nodes: {
         intake: {
-          steps: ['ご用件をうかがってもよろしいでしょうか'],
+          steps: [
+            '恐れ入りますが、患者様のお名前を伺ってもよろしいでしょうか',
+            '念のため、生年月日も伺ってもよろしいでしょうか',
+            'ご用件をうかがってもよろしいでしょうか'
+          ],
           options: [
             { label: 'かかりつけ・在宅担当の薬剤師がいる', next: 'hasPharmacist' },
             { label: '担当の薬剤師がいない（自分で対応）', next: 'noPharmacist' }
@@ -800,6 +831,9 @@ function h(str){
   return String(str == null ? '' : str).replace(/[&<>"']/g, function(c){
     return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
   });
+}
+function stepNum(idx){
+  return String(idx + 1);
 }
 function genId(){
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -1209,7 +1243,7 @@ function renderPhraseBody(cat, rawText){
       }
     });
     if (preamble.length > 1){
-      html += '<ol class="phrase-steps">' + preamble.map(function(l){ return '<li>' + h(l) + '</li>'; }).join('') + '</ol>';
+      html += '<ol class="phrase-steps">' + preamble.map(function(l, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span>' + h(l) + '</li>'; }).join('') + '</ol>';
     } else if (preamble.length === 1){
       html += '<div class="phrase-preamble">' + h(preamble[0]) + '</div>';
     }
@@ -1223,7 +1257,7 @@ function renderPhraseBody(cat, rawText){
     if (isChoice){
       html += '<div class="phrase-choices">' + items.map(function(l){ return '<div class="phrase-choice">' + h(l.trim().replace(/^・/, '')) + '</div>'; }).join('') + '</div>';
     } else {
-      html += '<ol class="phrase-steps">' + items.map(function(l){ return '<li>' + h(l) + '</li>'; }).join('') + '</ol>';
+      html += '<ol class="phrase-steps">' + items.map(function(l, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span>' + h(l) + '</li>'; }).join('') + '</ol>';
     }
   } else {
     html += h(items[0] || '');
@@ -1319,7 +1353,7 @@ function renderFlow(cat){
     html += '<div class="flow-phrase">' + h(fstate.leaf.text || '') + '</div>';
   } else {
     if (node.steps){
-      html += '<ol class="flow-steps">' + node.steps.map(function(s){ return '<li>' + h(s) + '</li>'; }).join('') + '</ol>';
+      html += '<ol class="flow-steps">' + node.steps.map(function(s, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span>' + h(s) + '</li>'; }).join('') + '</ol>';
     }
     if (node.options){
       html += '<div class="flow-options">' + node.options.map(function(o, idx){
