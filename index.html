@@ -57,6 +57,10 @@
     --primary-deep: #3f7cad;
     --accent: #ffd8b8;
     --accent-dark: #f0a868;
+    --ok-bg: #d9f5df;
+    --ok-text: #2e7d4f;
+    --ng-bg: #ffe1e4;
+    --ng-text: #c1495a;
     --step-bg: #eef1f4;
     --step-text: #5b6b7a;
     --danger: #e57373;
@@ -198,6 +202,14 @@
   .phrase-item .txt{ flex:1; white-space:pre-wrap; }
   .phrase-heading{ font-weight:700; color: var(--primary-deep); font-size:15px; margin-bottom:8px; }
   .phrase-note{ margin-top:10px; font-size:13px; color: var(--text); line-height:1.7; background: var(--surface-2); border-radius:8px; padding:8px 10px; }
+  .table-scroll{ overflow-x:auto; }
+  table.replace-table{ width:100%; border-collapse: collapse; font-size:13.5px; }
+  table.replace-table th, table.replace-table td{ padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+  table.replace-table th{ color:var(--text-light); font-weight:700; font-size:12px; }
+  table.replace-table td.table-row-actions{ white-space:nowrap; text-align:right; }
+  .ng-chip{ background: var(--ng-bg); color: var(--ng-text); padding:3px 8px; border-radius:8px; display:inline-block; }
+  .ok-chip{ background: var(--ok-bg); color: var(--ok-text); padding:3px 8px; border-radius:8px; display:inline-block; }
+  .table-edit-cell .phrase-edit-textarea{ min-height:70px; }
   .phrase-steps{
     list-style:none; margin:0 0 12px; padding-left:0;
     display:flex; flex-direction:column; gap:12px;
@@ -1437,9 +1449,9 @@ function renderBasicRulesPanel(){
   wrap.innerHTML = sections.map(function(sec, idx){
     return '<div class="card">' +
       '<h3><span class="num">' + (idx + 1) + '</span>' + h(sec.title) + '</h3>' +
-      '<ul class="phrase-list" id="basicPhraseList-' + h(sec.id) + '"></ul>' +
+      '<div id="basicPhraseList-' + h(sec.id) + '"></div>' +
       (canEdit() ? '<div class="add-phrase-form">' +
-        '<textarea class="basic-new-phrase-input" data-section="' + h(sec.id) + '" placeholder="項目を追加...（複数行入力できます）" rows="2"></textarea>' +
+        '<textarea class="basic-new-phrase-input" data-section="' + h(sec.id) + '" placeholder="' + (BASIC_TABLE_SECTIONS[sec.id] ? '例: ' + h(BASIC_TABLE_SECTIONS[sec.id].headers[0]) + 'の内容 → ' + h(BASIC_TABLE_SECTIONS[sec.id].headers[1]) + 'の内容' : '項目を追加...（複数行入力できます）') + '" rows="2"></textarea>' +
         '<button class="btn btn-sm basic-add-phrase-btn" data-section="' + h(sec.id) + '">追加</button></div>' : '') +
       '</div>';
   }).join('');
@@ -1458,15 +1470,78 @@ function renderBasicRulesPanel(){
   });
 }
 
+const BASIC_TABLE_SECTIONS = {
+  'replace-table': { headers: ['NG', 'OK'], useChips: true },
+  'confirm-expr': { headers: ['場面', '表現'], useChips: false }
+};
+
+function parseTableRow(text){
+  const extracted = extractStaffNotes(text.split('\n'));
+  const lines = extracted.items;
+  const first = lines[0] || '';
+  const idx = first.indexOf(' → ');
+  let colA, colBLines;
+  if (idx === -1){
+    colA = first;
+    colBLines = lines.slice(1);
+  } else {
+    colA = first.slice(0, idx);
+    colBLines = [first.slice(idx + 3)].concat(lines.slice(1));
+  }
+  return { colA: colA, colBLines: colBLines, notes: extracted.notes };
+}
+
 function renderBasicPhraseListInto(sec){
   const list = document.getElementById('basicPhraseList-' + sec.id);
   if (!list) return;
+  if (BASIC_TABLE_SECTIONS[sec.id]){
+    renderBasicTableInto(sec, list);
+  } else {
+    renderBasicListInto(sec, list);
+  }
+}
+
+function renderBasicTableInto(sec, wrap){
+  const conf = BASIC_TABLE_SECTIONS[sec.id];
+  const phrases = sec.phrases || [];
+  const colCount = canEdit() ? 3 : 2;
+  const rowsHtml = phrases.map(function(p){
+    const isEditingThis = state.editingBasicPhrase && state.editingBasicPhrase.sectionId === sec.id && state.editingBasicPhrase.phraseId === p.id;
+    if (isEditingThis){
+      return '<tr><td colspan="' + colCount + '" class="table-edit-cell">' +
+        '<textarea class="phrase-edit-textarea">' + h(p.text) + '</textarea>' +
+        '<div class="phrase-edit-actions">' +
+        '<button class="btn btn-sm" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '" data-act="basic-save">保存</button>' +
+        '<button class="btn secondary btn-sm" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '" data-act="basic-cancel">キャンセル</button>' +
+        '</div></td></tr>';
+    }
+    const row = parseTableRow(p.text);
+    const colAHtml = conf.useChips ? '<span class="ng-chip">' + h(row.colA) + '</span>' : h(row.colA);
+    const colBMain = row.colBLines[0] || '';
+    const colBExtra = row.colBLines.slice(1).map(function(l){ return '<div style="margin-top:6px;">' + h(l) + '</div>'; }).join('');
+    const colBHtml = (conf.useChips ? '<span class="ok-chip">' + h(colBMain) + '</span>' : h(colBMain)) + colBExtra + renderStaffNotes(row.notes);
+    return '<tr>' +
+      '<td>' + colAHtml + '</td>' +
+      '<td>' + colBHtml + '</td>' +
+      (canEdit() ? '<td class="table-row-actions">' +
+        '<button class="basic-phrase-edit-btn" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">編集</button>' +
+        '<button class="basic-phrase-del" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">✕</button>' +
+        '</td>' : '') +
+      '</tr>';
+  }).join('');
+
+  wrap.innerHTML = (phrases.length ? '<div class="table-scroll"><table class="replace-table"><thead><tr><th>' + h(conf.headers[0]) + '</th><th>' + h(conf.headers[1]) + '</th>' + (canEdit() ? '<th></th>' : '') + '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' : '<div class="empty-hint">項目はまだありません。</div>');
+
+  wireBasicPhraseHandlers(sec, wrap);
+}
+
+function renderBasicListInto(sec, list){
   const phrases = sec.phrases || [];
   if (!phrases.length){
     list.innerHTML = '<div class="empty-hint">項目はまだありません。</div>';
     return;
   }
-  list.innerHTML = phrases.map(function(p){
+  list.innerHTML = '<ul class="phrase-list">' + phrases.map(function(p){
     const isEditingThis = state.editingBasicPhrase && state.editingBasicPhrase.sectionId === sec.id && state.editingBasicPhrase.phraseId === p.id;
     if (isEditingThis){
       return '<li class="phrase-item editing">' +
@@ -1482,38 +1557,42 @@ function renderBasicPhraseListInto(sec){
         '<button class="basic-phrase-edit-btn" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">編集</button>' +
         '<button class="basic-phrase-del" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">✕</button>' +
         '</div>' : '') + '</li>';
-  }).join('');
+  }).join('') + '</ul>';
 
-  list.querySelectorAll('.phrase-edit-textarea').forEach(function(ta){
-    ta.style.height = Math.max(ta.scrollHeight, 100) + 'px';
+  wireBasicPhraseHandlers(sec, list);
+}
+
+function wireBasicPhraseHandlers(sec, wrap){
+  wrap.querySelectorAll('.phrase-edit-textarea').forEach(function(ta){
+    ta.style.height = Math.max(ta.scrollHeight, 70) + 'px';
     ta.addEventListener('input', function(){
       ta.style.height = 'auto';
       ta.style.height = ta.scrollHeight + 'px';
     });
   });
 
-  list.querySelectorAll('.basic-phrase-del').forEach(function(btn){
+  wrap.querySelectorAll('.basic-phrase-del').forEach(function(btn){
     btn.onclick = function(){
       const phraseObj = (sec.phrases || []).find(function(p){ return p.id === btn.dataset.id; });
       if (phraseObj) deleteBasicRulePhrase(btn.dataset.section, phraseObj);
     };
   });
-  list.querySelectorAll('.basic-phrase-edit-btn').forEach(function(btn){
+  wrap.querySelectorAll('.basic-phrase-edit-btn').forEach(function(btn){
     btn.onclick = function(){
       state.editingBasicPhrase = { sectionId: btn.dataset.section, phraseId: btn.dataset.id };
       renderBasicRulesPanel();
     };
   });
-  list.querySelectorAll('[data-act="basic-cancel"]').forEach(function(btn){
+  wrap.querySelectorAll('[data-act="basic-cancel"]').forEach(function(btn){
     btn.onclick = function(){
       state.editingBasicPhrase = null;
       renderBasicRulesPanel();
     };
   });
-  list.querySelectorAll('[data-act="basic-save"]').forEach(function(btn){
+  wrap.querySelectorAll('[data-act="basic-save"]').forEach(function(btn){
     btn.onclick = async function(){
-      const li = btn.closest('li');
-      const textarea = li.querySelector('.phrase-edit-textarea');
+      const container = btn.closest('td') || btn.closest('.txt');
+      const textarea = container.querySelector('.phrase-edit-textarea');
       const ok = await updateBasicRulePhrase(btn.dataset.section, btn.dataset.id, textarea.value);
       if (ok) state.editingBasicPhrase = null;
       renderBasicRulesPanel();
