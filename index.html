@@ -78,7 +78,6 @@
     color: var(--text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
   }
   #app{ max-width: 920px; margin: 0 auto; padding: 12px 14px 60px; }
   button{ font-family: inherit; cursor: pointer; }
@@ -217,7 +216,7 @@
   .phrase-item{ display:flex; align-items:flex-start; gap:8px; background: var(--surface); border:1px solid var(--border); padding:10px 12px; border-radius:12px; font-size:14px; line-height:1.8; box-shadow: var(--shadow); }
   .phrase-item .txt{ flex:1; white-space:pre-wrap; }
   .phrase-heading{ font-weight:700; color: var(--primary-deep); font-size:15px; margin-bottom:8px; }
-  .phrase-note{ margin-top:10px; font-size:12px; color: var(--text-light); line-height:1.7; background: var(--surface-2); border-radius:8px; padding:8px 10px; }
+  .phrase-note{ margin-top:10px; font-size:13px; color: var(--text); line-height:1.7; background: var(--surface-2); border-radius:8px; padding:8px 10px; }
   .phrase-steps{
     list-style:none; margin:0 0 12px; padding-left:0;
     display:flex; flex-direction:column; gap:12px;
@@ -234,24 +233,18 @@
     line-height:1;
   }
   .phrase-steps li .step-txt{ flex:1; line-height:1.7; }
-  .phrase-choices{ display:flex; flex-direction:column; gap:8px; }
+  .phrase-choices{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
   .phrase-choice{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
   .phrase-preamble{ margin-bottom:10px; }
-  .phrase-branches{ display:flex; flex-direction:column; gap:10px; }
+  .phrase-branches{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
   .phrase-branch{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:left; display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; }
   .phrase-branch-badge{ display:inline-flex; align-items:center; flex-shrink:0; white-space:nowrap; background: var(--accent); color:#8a4b12; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; letter-spacing:0.2px; }
   .phrase-branch-body{ font-size:14px; line-height:1.7; flex:1; min-width:120px; }
   .phrase-del{ border:none; background:none; color: var(--danger); font-size:15px; padding:2px 4px; line-height:1; }
   .phrase-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; }
   .phrase-edit-btn{ border:none; background:none; color: var(--primary-deep); font-size:11.5px; font-weight:700; padding:2px 4px; }
-  .phrase-item.editing{
-    align-items:stretch; flex-direction:column;
-    width:100vw; max-width:100vw; box-sizing:border-box;
-    margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw);
-    border-radius:0; border-left:none; border-right:none;
-    padding:12px 16px;
-  }
-  .phrase-edit-textarea{ width:100%; min-height:320px; padding:9px 12px; border-radius:10px; border:1px solid var(--primary); font-size:14px; font-family:inherit; resize:vertical; line-height:1.6; box-sizing:border-box; }
+  .phrase-item.editing{ align-items:stretch; }
+  .phrase-edit-textarea{ width:270px; max-width:100%; min-height:320px; padding:9px 12px; border-radius:10px; border:1px solid var(--primary); font-size:14px; font-family:inherit; resize:vertical; line-height:1.6; box-sizing:border-box; }
   .phrase-edit-actions{ display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
 
   .add-phrase-form{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
@@ -552,13 +545,21 @@ const DEFAULT_CATEGORIES = [
           options: [
             { label: '離席', text: '◆単に席を外している場合\n◯◯は今、席を外しております\n◆他の患者様対応中の場合\n◯◯は今、患者様対応中です', next: 'action' },
             { label: '外出', text: '◯◯は、外出しております', next: 'action' },
-            { label: '休み', text: '◯◯は、本日お休みを頂戴しております', next: 'action' }
+            { label: '休み', text: '◯◯は、本日お休みを頂戴しております', next: 'dayOffAction' }
           ]
         },
         action: {
           question: 'どのように対応する？',
           options: [
             { label: '戻り次第、折り返す', next: 'callback' },
+            { label: '自分が代わりに用件を伺う', text: 'よろしければ／お差し支えなければ、わたくしが代わりにお電話伺いしましょうか', next: null },
+            { label: '伝言を預かる', next: 'message' }
+          ]
+        },
+        dayOffAction: {
+          question: 'どのように対応する？',
+          options: [
+            { label: '出勤次第、折り返す', next: 'callback' },
             { label: '自分が代わりに用件を伺う', text: 'よろしければ／お差し支えなければ、わたくしが代わりにお電話伺いしましょうか', next: null },
             { label: '伝言を預かる', next: 'message' }
           ]
@@ -1380,7 +1381,7 @@ function renderPhraseListInto(cat){
         const textarea = li.querySelector('.phrase-edit-textarea');
         const ok = await updatePhrase(cat.id, btn.dataset.id, textarea.value);
         if (ok) state.editingPhraseId = null;
-        renderPhraseListInto(cat);
+        renderPhraseListInto(findCategory(cat.id) || cat);
       };
     });
   }
