@@ -57,10 +57,6 @@
     --primary-deep: #3f7cad;
     --accent: #ffd8b8;
     --accent-dark: #f0a868;
-    --ok-bg: #d9f5df;
-    --ok-text: #2e7d4f;
-    --ng-bg: #ffe1e4;
-    --ng-text: #c1495a;
     --step-bg: #eef1f4;
     --step-text: #5b6b7a;
     --danger: #e57373;
@@ -168,21 +164,6 @@
   .card h3{ margin:0 0 10px; font-size:15px; color: var(--primary-deep); display:flex; align-items:center; gap:6px; }
   .card h3 .num{ background: var(--step-bg); color: var(--step-text); width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
 
-  .cushion-list{ display:flex; flex-wrap:wrap; gap:8px; }
-  .cushion-chip{ background: var(--surface-2); border:1px solid var(--border); padding:7px 14px; border-radius: 999px; font-size:13.5px; }
-
-  table.replace-table{ width:100%; border-collapse: collapse; font-size:13.5px; }
-  .table-scroll{ overflow-x:auto; }
-  table.replace-table th, table.replace-table td{ padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
-  table.replace-table th{ color:var(--text-light); font-weight:700; font-size:12px; }
-  .ng-text{ background: var(--ng-bg); color: var(--ng-text); padding:3px 8px; border-radius:8px; display:inline-block; }
-  .ok-text{ background: var(--ok-bg); color: var(--ok-text); padding:3px 8px; border-radius:8px; display:inline-block; }
-  .table-note{ font-size:12px; color: var(--text-light); margin-top:4px; }
-
-  .basic-phrase-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
-  .basic-phrase-list li{ background: var(--surface-2); border-radius:10px; padding:9px 12px; font-size:13.5px; }
-  .basic-phrase-list li b{ color: var(--primary-deep); }
-
   /* ---------- Category grid ---------- */
   .category-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; }
   .cat-group{ margin-bottom:22px; }
@@ -280,6 +261,14 @@
   }
   .flow-steps li .step-txt{ flex:1; line-height:1.7; }
   .flow-restart{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+  .flow-edit-form{ background:#fff; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:4px; box-shadow: var(--shadow); }
+  .flow-edit-form label{ font-size:12px; color:var(--text-light); margin:8px 0 2px; }
+  .flow-edit-form label:first-child{ margin-top:0; }
+  .flow-edit-input, .flow-edit-textarea{ width:100%; padding:9px 12px; border-radius:10px; border:1px solid var(--primary); font-size:14px; font-family:inherit; box-sizing:border-box; }
+  .flow-edit-textarea{ min-height:70px; resize:vertical; line-height:1.6; }
+  .flow-edit-option{ background: var(--surface-2); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+  .flow-edit-opt-label{ font-weight:700; }
+  .flow-edit-opt-text{ min-height:50px; }
 
   /* ---------- Modal ---------- */
   .modal-overlay{ position:fixed; inset:0; background:rgba(40,60,80,0.45); display:none; align-items:center; justify-content:center; z-index:200; padding:16px; }
@@ -349,62 +338,7 @@
 
     <!-- 基本ルール -->
     <div class="panel" id="panel-basicRules">
-      <div class="card">
-        <h3><span class="num">1</span>言い換え表（NG→OK）</h3>
-        <div class="table-scroll">
-        <table class="replace-table">
-          <thead><tr><th>NG</th><th>OK</th></tr></thead>
-          <tbody>
-            <tr><td><span class="ng-text">うちの薬局</span></td><td><span class="ok-text">わたくしどもの薬局</span></td></tr>
-            <tr><td><span class="ng-text">◯◯さんですか</span></td><td><span class="ok-text">失礼ですが／恐れ入りますが、◯◯様でいらっしゃいますか</span></td></tr>
-            <tr><td><span class="ng-text">こっちへ来てください</span></td><td><span class="ok-text">恐れ入りますが、こちらへお越しいただけますか</span></td></tr>
-            <tr><td><span class="ng-text">知っていますか</span></td><td><span class="ok-text">ご存知でいらっしゃいますか</span></td></tr>
-            <tr>
-              <td><span class="ng-text">わかりません</span></td>
-              <td>
-                <span class="ok-text">申し訳ございませんが、こちらでは分かりかねます</span>
-                <div class="table-note">→ パターン1: お調べして折り返す　／　パターン2: 担当者に代わる</div>
-              </td>
-            </tr>
-            <tr><td><span class="ng-text">ちょっとお待ちください</span></td><td><span class="ok-text">恐れ入りますが／申し訳ございませんが、少々お待ちください。もう少しお待ちいただいてもよろしいでしょうか</span></td></tr>
-            <tr><td><span class="ng-text">具合、大丈夫ですか</span></td><td><span class="ok-text">体調はいかがでしょうか／お加減いかがでしょうか</span></td></tr>
-          </tbody>
-        </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3><span class="num">2</span>確認表現の使い分け</h3>
-        <div class="table-scroll">
-        <table class="replace-table">
-          <thead><tr><th>場面</th><th>表現</th></tr></thead>
-          <tbody>
-            <tr><td>現在の確認</td><td>〜でよろしいでしょうか</td></tr>
-            <tr>
-              <td>過去の記憶の確認</td>
-              <td>
-                <div><span class="ok-text">〜でいらっしゃいましたでしょうか</span></div>
-                <div style="margin-top:6px;"><span class="ok-text">〜とお伺いしておりましたが、よろしいでしょうか</span></div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3><span class="num">3</span>会話中に使える相槌フレーズ</h3>
-        <ul class="basic-phrase-list">
-          <li>さようでございますね</li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <h3><span class="num">4</span>電話に出るタイミングのマナー</h3>
-        <ul class="basic-phrase-list">
-          <li>3コールを超えて電話に出ると失礼な印象を与えかねないため、出るのが遅れた時は「大変お待たせしてしまい申し訳ございません」と一言添える</li>
-        </ul>
-      </div>
+      <div id="basicRulesCards"></div>
     </div>
 
     <!-- シチュエーション一覧 -->
@@ -509,11 +443,45 @@ const ICONS = {
 /* ============================================================
    初期データ（Firestoreが空の場合に自動で登録される既定カテゴリ）
    ============================================================ */
+const DEFAULT_BASIC_RULES = [
+  {
+    id: 'replace-table', title: '言い換え表（NG→OK）',
+    phrases: [
+      { id: 'b1-1', text: 'うちの薬局 → わたくしどもの薬局' },
+      { id: 'b1-2', text: '◯◯さんですか → 失礼ですが／恐れ入りますが、◯◯様でいらっしゃいますか' },
+      { id: 'b1-3', text: 'こっちへ来てください → 恐れ入りますが、こちらへお越しいただけますか' },
+      { id: 'b1-4', text: '知っていますか → ご存知でいらっしゃいますか' },
+      { id: 'b1-5', text: 'わかりません → 申し訳ございませんが、こちらでは分かりかねます\n※パターン1: お調べして折り返す／パターン2: 担当者に代わる' },
+      { id: 'b1-6', text: 'ちょっとお待ちください → 恐れ入りますが／申し訳ございませんが、少々お待ちください。もう少しお待ちいただいてもよろしいでしょうか' },
+      { id: 'b1-7', text: '具合、大丈夫ですか → 体調はいかがでしょうか／お加減いかがでしょうか' }
+    ]
+  },
+  {
+    id: 'confirm-expr', title: '確認表現の使い分け',
+    phrases: [
+      { id: 'b2-1', text: '【現在の確認】\n〜でよろしいでしょうか' },
+      { id: 'b2-2', text: '【過去の記憶の確認】\n・〜でいらっしゃいましたでしょうか\n・〜とお伺いしておりましたが、よろしいでしょうか' }
+    ]
+  },
+  {
+    id: 'aizuchi', title: '会話中に使える相槌フレーズ',
+    phrases: [
+      { id: 'b3-1', text: 'さようでございますね' }
+    ]
+  },
+  {
+    id: 'manners', title: '電話に出るタイミングのマナー',
+    phrases: [
+      { id: 'b4-1', text: '3コールを超えて電話に出ると失礼な印象を与えかねないため、出るのが遅れた時は「大変お待たせしてしまい申し訳ございません」と一言添える' }
+    ]
+  }
+];
+
 const DEFAULT_CATEGORIES = [
   {
     id: 'reception-first', name: '受付一次対応', icon: 'chatDots', order: 1, kind: 'phrases', isDefault: true,
     phrases: [
-      { id: 'd1-1', text: '【第一声（時間帯別）】\n◆午前中\nおはようございます\n◆10:30以降\nはい、◯◯薬局です' },
+      { id: 'd1-1', text: '【第一声（時間帯別）】\n◆午前中\nおはようございます\n◆10:30以降\nはい、◯◯薬局です\n◆電話に出るのが遅れた場合\n大変お待たせいたしました' },
       { id: 'd1-2', text: '【用件確認の前に（該当する場合）】\n◆患者の場合\n恐れ入りますが、お名前と生年月日をお伺いしてもよろしいでしょうか\n◆折り返し電話をくれた患者の場合\n折り返しのお電話ありがとうございます。\n◆患者以外の場合\nご用件をお伺いしてもよろしいでしょうか／かしこまりました。' },
       { id: 'd1-3', text: '【用件確認の流れ】\nご用件をお伺いしてもよろしいでしょうか\n◯◯のお問い合わせですね\n※用件は必ず復唱する\n担当者へ取り次ぐ' }
     ]
@@ -869,9 +837,15 @@ const state = {
   activeTab: 'basicRules',
   openCategoryId: null,
   editingPhraseId: null,
-  flow: { nodeStack: null, crumbs: [], leaf: null }
+  editingFlowNode: null,
+  flow: { nodeStack: null, crumbs: [], leaf: null },
+  basicRules: [],
+  basicRulesLoaded: false,
+  basicRulesExists: false,
+  editingBasicPhrase: null
 };
 let seedAttempted = false;
+let basicRulesSeedAttempted = false;
 let db = null;
 let auth = null;
 let authReady = false;
@@ -897,6 +871,9 @@ function getCategories(){
 }
 function findCategory(id){
   return getCategories().find(function(c){ return c.id === id; });
+}
+function getBasicRules(){
+  return (state.basicRulesLoaded && state.basicRulesExists) ? state.basicRules : DEFAULT_BASIC_RULES;
 }
 function canEdit(){
   if (!state.currentUser) return false;
@@ -935,6 +912,7 @@ function boot(){
     renderAuthBox();
     renderEditGatedUI();
     maybeSeed();
+    maybeSeedBasicRules();
   });
 
   onSnapshot(query(collection(db, 'categories'), orderBy('order')), function(snapshot){
@@ -946,6 +924,16 @@ function boot(){
     if (state.openCategoryId) renderCategoryDetail(state.openCategoryId);
   }, function(err){
     showToast('データの読み込みに失敗しました: ' + err.message, 'error');
+  });
+
+  onSnapshot(doc(db, 'meta', 'basicRules'), function(snapshot){
+    state.basicRulesLoaded = true;
+    state.basicRulesExists = snapshot.exists();
+    state.basicRules = snapshot.exists() ? (snapshot.data().sections || []) : [];
+    maybeSeedBasicRules();
+    renderBasicRulesPanel();
+  }, function(err){
+    showToast('基本ルールの読み込みに失敗しました: ' + err.message, 'error');
   });
 
   setupStaticUI();
@@ -968,6 +956,20 @@ async function maybeSeed(){
   }catch(e){
     seedAttempted = false;
     showToast('初期データの準備に失敗しました: ' + e.message, 'error');
+  }
+}
+
+async function maybeSeedBasicRules(){
+  if (basicRulesSeedAttempted) return;
+  if (!authReady || !state.currentUser) return;
+  if (!state.basicRulesLoaded) return;
+  if (state.basicRulesExists) return;
+  basicRulesSeedAttempted = true;
+  try{
+    await setDoc(doc(db, 'meta', 'basicRules'), { sections: DEFAULT_BASIC_RULES });
+  }catch(e){
+    basicRulesSeedAttempted = false;
+    showToast('基本ルールの初期データ準備に失敗しました: ' + e.message, 'error');
   }
 }
 
@@ -1198,6 +1200,7 @@ function openCategory(catId){
   state.openCategoryId = catId;
   state.flow = { nodeStack: null, crumbs: [], leaf: null };
   state.editingPhraseId = null;
+  state.editingFlowNode = null;
   document.getElementById('situationsList').style.display = 'none';
   document.getElementById('situationsDetail').style.display = 'block';
   renderCategoryDetail(catId);
@@ -1425,6 +1428,100 @@ function renderPhraseSubList(cat, list, phrases, showEmptyHint){
 }
 
 /* ============================================================
+   基本ルール（編集可能）
+   ============================================================ */
+function renderBasicRulesPanel(){
+  const wrap = document.getElementById('basicRulesCards');
+  if (!wrap) return;
+  const sections = getBasicRules();
+  wrap.innerHTML = sections.map(function(sec, idx){
+    return '<div class="card">' +
+      '<h3><span class="num">' + (idx + 1) + '</span>' + h(sec.title) + '</h3>' +
+      '<ul class="phrase-list" id="basicPhraseList-' + h(sec.id) + '"></ul>' +
+      (canEdit() ? '<div class="add-phrase-form">' +
+        '<textarea class="basic-new-phrase-input" data-section="' + h(sec.id) + '" placeholder="項目を追加...（複数行入力できます）" rows="2"></textarea>' +
+        '<button class="btn btn-sm basic-add-phrase-btn" data-section="' + h(sec.id) + '">追加</button></div>' : '') +
+      '</div>';
+  }).join('');
+
+  sections.forEach(function(sec){
+    renderBasicPhraseListInto(sec);
+  });
+
+  wrap.querySelectorAll('.basic-add-phrase-btn').forEach(function(btn){
+    btn.onclick = async function(){
+      const sectionId = btn.dataset.section;
+      const ta = wrap.querySelector('.basic-new-phrase-input[data-section="' + sectionId + '"]');
+      const ok = await addBasicRulePhrase(sectionId, ta.value);
+      if (ok) ta.value = '';
+    };
+  });
+}
+
+function renderBasicPhraseListInto(sec){
+  const list = document.getElementById('basicPhraseList-' + sec.id);
+  if (!list) return;
+  const phrases = sec.phrases || [];
+  if (!phrases.length){
+    list.innerHTML = '<div class="empty-hint">項目はまだありません。</div>';
+    return;
+  }
+  list.innerHTML = phrases.map(function(p){
+    const isEditingThis = state.editingBasicPhrase && state.editingBasicPhrase.sectionId === sec.id && state.editingBasicPhrase.phraseId === p.id;
+    if (isEditingThis){
+      return '<li class="phrase-item editing">' +
+        '<div class="txt">' +
+        '<textarea class="phrase-edit-textarea">' + h(p.text) + '</textarea>' +
+        '<div class="phrase-edit-actions">' +
+        '<button class="btn btn-sm" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '" data-act="basic-save">保存</button>' +
+        '<button class="btn secondary btn-sm" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '" data-act="basic-cancel">キャンセル</button>' +
+        '</div></div></li>';
+    }
+    return '<li class="phrase-item"><div class="txt">' + renderPhraseBody({}, p.text) + '</div>' +
+      (canEdit() ? '<div class="phrase-actions">' +
+        '<button class="basic-phrase-edit-btn" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">編集</button>' +
+        '<button class="basic-phrase-del" data-section="' + h(sec.id) + '" data-id="' + h(p.id) + '">✕</button>' +
+        '</div>' : '') + '</li>';
+  }).join('');
+
+  list.querySelectorAll('.phrase-edit-textarea').forEach(function(ta){
+    ta.style.height = Math.max(ta.scrollHeight, 100) + 'px';
+    ta.addEventListener('input', function(){
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    });
+  });
+
+  list.querySelectorAll('.basic-phrase-del').forEach(function(btn){
+    btn.onclick = function(){
+      const phraseObj = (sec.phrases || []).find(function(p){ return p.id === btn.dataset.id; });
+      if (phraseObj) deleteBasicRulePhrase(btn.dataset.section, phraseObj);
+    };
+  });
+  list.querySelectorAll('.basic-phrase-edit-btn').forEach(function(btn){
+    btn.onclick = function(){
+      state.editingBasicPhrase = { sectionId: btn.dataset.section, phraseId: btn.dataset.id };
+      renderBasicRulesPanel();
+    };
+  });
+  list.querySelectorAll('[data-act="basic-cancel"]').forEach(function(btn){
+    btn.onclick = function(){
+      state.editingBasicPhrase = null;
+      renderBasicRulesPanel();
+    };
+  });
+  list.querySelectorAll('[data-act="basic-save"]').forEach(function(btn){
+    btn.onclick = async function(){
+      const li = btn.closest('li');
+      const textarea = li.querySelector('.phrase-edit-textarea');
+      const ok = await updateBasicRulePhrase(btn.dataset.section, btn.dataset.id, textarea.value);
+      if (ok) state.editingBasicPhrase = null;
+      renderBasicRulesPanel();
+    };
+  });
+}
+
+/* ============================================================
    不在時対応フロー（分岐タップ式）
    ============================================================ */
 function renderFlow(cat){
@@ -1436,6 +1533,7 @@ function renderFlow(cat){
   const nodeId = fstate.nodeStack[fstate.nodeStack.length - 1];
   const node = flow.nodes[nodeId];
   const lastCrumb = fstate.crumbs[fstate.crumbs.length - 1];
+  const isEditing = canEdit() && !fstate.leaf && state.editingFlowNode === nodeId;
 
   let html = '';
   if (fstate.crumbs.length){
@@ -1444,45 +1542,51 @@ function renderFlow(cat){
     }).join('') + (fstate.leaf ? '<span class="flow-crumb">' + h(fstate.leaf.label) + '</span>' : '') + '</div>';
   }
 
-  if (node.question){
-    html += '<div class="flow-question">' + h(node.question) + '</div>';
-  }
-  if (node.note){
-    html += '<div class="flow-note">' + h(node.note) + '</div>';
-  }
-
-  if (!fstate.leaf && lastCrumb && lastCrumb.text){
-    html += needsFlowWrapper(lastCrumb.text)
-      ? '<div class="flow-phrase">' + renderPhraseBody(cat, lastCrumb.text) + '</div>'
-      : renderPhraseBody(cat, lastCrumb.text);
-  }
-
-  if (fstate.leaf){
-    html += needsFlowWrapper(fstate.leaf.text || '')
-      ? '<div class="flow-phrase">' + renderPhraseBody(cat, fstate.leaf.text || '') + '</div>'
-      : renderPhraseBody(cat, fstate.leaf.text || '');
+  if (isEditing){
+    html += renderFlowEditForm(node);
   } else {
-    if (node.steps){
-      const extracted = extractStaffNotes(node.steps);
-      html += '<ol class="flow-steps">' + extracted.items.map(function(s, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span><span class="step-txt">' + h(s) + '</span></li>'; }).join('') + '</ol>';
-      html += renderStaffNotes(extracted.notes);
+    if (node.question){
+      html += '<div class="flow-question">' + h(node.question) + '</div>';
     }
-    if (node.options){
-      html += '<div class="flow-options">' + node.options.map(function(o, idx){
-        return '<button class="flow-option-btn" data-idx="' + idx + '">' + h(o.label) + '</button>';
-      }).join('') + '</div>';
+    if (node.note){
+      html += '<div class="flow-note">' + h(node.note) + '</div>';
+    }
+
+    if (!fstate.leaf && lastCrumb && lastCrumb.text){
+      html += needsFlowWrapper(lastCrumb.text)
+        ? '<div class="flow-phrase">' + renderPhraseBody(cat, lastCrumb.text) + '</div>'
+        : renderPhraseBody(cat, lastCrumb.text);
+    }
+
+    if (fstate.leaf){
+      html += needsFlowWrapper(fstate.leaf.text || '')
+        ? '<div class="flow-phrase">' + renderPhraseBody(cat, fstate.leaf.text || '') + '</div>'
+        : renderPhraseBody(cat, fstate.leaf.text || '');
+    } else {
+      if (node.steps){
+        const extracted = extractStaffNotes(node.steps);
+        html += '<ol class="flow-steps">' + extracted.items.map(function(s, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span><span class="step-txt">' + h(s) + '</span></li>'; }).join('') + '</ol>';
+        html += renderStaffNotes(extracted.notes);
+      }
+      if (node.options){
+        html += '<div class="flow-options">' + node.options.map(function(o, idx){
+          return '<button class="flow-option-btn" data-idx="' + idx + '">' + h(o.label) + '</button>';
+        }).join('') + '</div>';
+      }
     }
   }
 
   const canGoBack = !!fstate.leaf || fstate.nodeStack.length > 1;
   html += '<div class="flow-restart">' +
     (canGoBack ? '<button class="btn secondary btn-sm" id="flowBackBtn">← 一つ戻る</button>' : '') +
+    (canEdit() && !fstate.leaf && !isEditing ? '<button class="btn secondary btn-sm" id="flowEditToggleBtn">✎ この画面を編集</button>' : '') +
     '<button class="btn secondary btn-sm" id="flowRestartBtn">↺ 最初からやり直す</button></div>';
 
   box.innerHTML = html;
 
   document.getElementById('flowRestartBtn').onclick = function(){
     state.flow = { nodeStack: [flow.start], crumbs: [], leaf: null };
+    state.editingFlowNode = null;
     renderFlow(cat);
   };
   const backBtn = document.getElementById('flowBackBtn');
@@ -1496,6 +1600,18 @@ function renderFlow(cat){
       }
       renderFlow(cat);
     };
+  }
+  const editToggleBtn = document.getElementById('flowEditToggleBtn');
+  if (editToggleBtn){
+    editToggleBtn.onclick = function(){
+      state.editingFlowNode = nodeId;
+      renderFlow(cat);
+    };
+  }
+
+  if (isEditing){
+    wireFlowEditForm(cat, nodeId, node);
+    return;
   }
 
   if (!fstate.leaf && node.options){
@@ -1513,6 +1629,71 @@ function renderFlow(cat){
       };
     });
   }
+}
+
+function renderFlowEditForm(node){
+  let html = '<div class="flow-edit-form">';
+  if (node.question !== undefined){
+    html += '<label>質問文</label><input type="text" id="flowEditQuestion" class="flow-edit-input" value="' + h(node.question || '') + '">';
+  }
+  if (node.note !== undefined){
+    html += '<label>補足メモ</label><textarea id="flowEditNote" class="flow-edit-textarea">' + h(node.note || '') + '</textarea>';
+  }
+  if (node.steps){
+    html += '<label>手順（1行に1つ）</label><textarea id="flowEditSteps" class="flow-edit-textarea">' + h(node.steps.join('\n')) + '</textarea>';
+  }
+  if (node.options){
+    html += '<label>選択肢</label>';
+    html += node.options.map(function(o, idx){
+      return '<div class="flow-edit-option">' +
+        '<input type="text" class="flow-edit-opt-label" data-idx="' + idx + '" value="' + h(o.label) + '" placeholder="ボタンの文言">' +
+        '<textarea class="flow-edit-opt-text" data-idx="' + idx + '" placeholder="選んだ時に話す文言（省略可）">' + h(o.text || '') + '</textarea>' +
+        '</div>';
+    }).join('');
+  }
+  html += '<div class="phrase-edit-actions">' +
+    '<button class="btn btn-sm" id="flowEditSaveBtn">保存</button>' +
+    '<button class="btn secondary btn-sm" id="flowEditCancelBtn">キャンセル</button>' +
+    '</div></div>';
+  return html;
+}
+
+function wireFlowEditForm(cat, nodeId, node){
+  document.querySelectorAll('.flow-edit-textarea, .flow-edit-opt-text').forEach(function(ta){
+    ta.style.height = Math.max(ta.scrollHeight, 70) + 'px';
+    ta.addEventListener('input', function(){
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    });
+  });
+  document.getElementById('flowEditCancelBtn').onclick = function(){
+    state.editingFlowNode = null;
+    renderFlow(cat);
+  };
+  document.getElementById('flowEditSaveBtn').onclick = async function(){
+    const newNode = JSON.parse(JSON.stringify(node));
+    const qInput = document.getElementById('flowEditQuestion');
+    if (qInput) newNode.question = qInput.value.trim();
+    const noteInput = document.getElementById('flowEditNote');
+    if (noteInput) newNode.note = noteInput.value.trim();
+    const stepsInput = document.getElementById('flowEditSteps');
+    if (stepsInput){
+      newNode.steps = stepsInput.value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+    }
+    if (newNode.options){
+      document.querySelectorAll('.flow-edit-opt-label').forEach(function(inp){
+        newNode.options[Number(inp.dataset.idx)].label = inp.value.trim();
+      });
+      document.querySelectorAll('.flow-edit-opt-text').forEach(function(ta){
+        const v = ta.value.trim();
+        if (v) newNode.options[Number(ta.dataset.idx)].text = v;
+        else delete newNode.options[Number(ta.dataset.idx)].text;
+      });
+    }
+    const ok = await updateFlowNode(cat.id, nodeId, newNode);
+    if (ok) state.editingFlowNode = null;
+    renderFlow(findCategory(cat.id) || cat);
+  };
 }
 
 /* ============================================================
@@ -1561,6 +1742,60 @@ async function updateHours(categoryId, open, close){
     await updateDoc(doc(db, 'categories', categoryId), { businessHours: { open: open, close: close } });
     showToast('受付時間を更新しました', 'success');
   }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); }
+}
+
+async function updateFlowNode(categoryId, nodeId, newNode){
+  if (!canEdit()) return false;
+  const cat = findCategory(categoryId);
+  if (!cat || !cat.flow) return false;
+  const newFlow = JSON.parse(JSON.stringify(cat.flow));
+  newFlow.nodes[nodeId] = newNode;
+  try{
+    await updateDoc(doc(db, 'categories', categoryId), { flow: newFlow });
+    showToast('保存しました', 'success');
+    return true;
+  }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); return false; }
+}
+
+async function addBasicRulePhrase(sectionId, text){
+  if (!canEdit()) return false;
+  text = (text || '').trim();
+  if (!text) return false;
+  const sections = JSON.parse(JSON.stringify(getBasicRules()));
+  const sec = sections.find(function(s){ return s.id === sectionId; });
+  if (!sec) return false;
+  sec.phrases = sec.phrases || [];
+  sec.phrases.push({ id: genId(), text: text });
+  try{
+    await setDoc(doc(db, 'meta', 'basicRules'), { sections: sections });
+    return true;
+  }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); return false; }
+}
+
+async function deleteBasicRulePhrase(sectionId, phraseObj){
+  if (!canEdit()) return;
+  const sections = JSON.parse(JSON.stringify(getBasicRules()));
+  const sec = sections.find(function(s){ return s.id === sectionId; });
+  if (!sec) return;
+  sec.phrases = (sec.phrases || []).filter(function(p){ return p.id !== phraseObj.id; });
+  try{
+    await setDoc(doc(db, 'meta', 'basicRules'), { sections: sections });
+  }catch(e){ showToast('削除に失敗しました: ' + e.message, 'error'); }
+}
+
+async function updateBasicRulePhrase(sectionId, phraseId, newText){
+  if (!canEdit()) return false;
+  newText = (newText || '').trim();
+  if (!newText){ showToast('内容を入力してください', 'error'); return false; }
+  const sections = JSON.parse(JSON.stringify(getBasicRules()));
+  const sec = sections.find(function(s){ return s.id === sectionId; });
+  if (!sec) return false;
+  sec.phrases = (sec.phrases || []).map(function(p){ return p.id === phraseId ? { id: p.id, text: newText } : p; });
+  try{
+    await setDoc(doc(db, 'meta', 'basicRules'), { sections: sections });
+    showToast('保存しました', 'success');
+    return true;
+  }catch(e){ showToast('保存に失敗しました: ' + e.message, 'error'); return false; }
 }
 
 async function submitAddCategory(){
