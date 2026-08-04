@@ -719,7 +719,7 @@ const DEFAULT_CATEGORIES = [
             { label: '①在庫なし・取り寄せ対応（卸から入手可能・入荷待ちのみ）', text: 'あいにく、現在こちらの店舗には◯◯というお薬の在庫がございません。ただいま、他店舗または卸業者より手配が可能かどうか確認しております。', next: 'urgency' },
             { label: '②流通不安定・入手困難（卸からの入手に時間がかかる）', text: '現在、◯◯というお薬は流通が不安定な状況にあり、卸業者からもすぐにはご用意が難しい状況です。', next: 'urgency' },
             { label: '③卸からも入手不可能（代替薬の相談が必要）', text: '現在、◯◯というお薬は卸業者からの入手が難しい状況でございます。\n恐れ入りますが、代替のお薬についてご相談させていただきたく、処方医と相談のうえ、改めてご連絡させていただいてもよろしいでしょうか。', next: 'closing' },
-            { label: '一部在庫あり・残りが入荷待ちの場合', next: 'partialStock' }
+            { label: '④一部在庫あり・残りが入荷待ちの場合', next: 'partialStock' }
           ]
         },
         urgency: {
@@ -733,7 +733,7 @@ const DEFAULT_CATEGORIES = [
           ]
         },
         partialStock: {
-          question: '一部在庫あり・残りが入荷待ちの場合',
+          question: '④一部在庫あり・残りが入荷待ちの場合',
           steps: [
             '本日ご用意する処方薬のうち、◯◯につきましては在庫がございますが、◯◯は在庫がなく、入荷までお時間をいただく状況でございます。',
             '入荷までの目安は、◯日後を予定しております。',
@@ -1012,11 +1012,22 @@ async function maybeMigrateStockShortageFlow(){
   if (!state.loaded) return;
   const cat = state.categories.find(function(c){ return c.id === 'stock-shortage'; });
   if (!cat || !cat.flow || !cat.flow.nodes) return;
-  if (cat.flow.nodes.closing) return;
+  const needsFullMigration = !cat.flow.nodes.closing;
+  const situationOpt = cat.flow.nodes.situation && (cat.flow.nodes.situation.options || []).find(function(o){ return o.next === 'partialStock'; });
+  const needsLabelFix = !needsFullMigration && situationOpt && situationOpt.label && situationOpt.label.indexOf('④') !== 0;
+  if (!needsFullMigration && !needsLabelFix) return;
   stockShortageMigrationAttempted = true;
   try{
-    const defaultCat = DEFAULT_CATEGORIES.find(function(c){ return c.id === 'stock-shortage'; });
-    const newFlow = JSON.parse(JSON.stringify(defaultCat.flow));
+    let newFlow;
+    if (needsFullMigration){
+      const defaultCat = DEFAULT_CATEGORIES.find(function(c){ return c.id === 'stock-shortage'; });
+      newFlow = JSON.parse(JSON.stringify(defaultCat.flow));
+    } else {
+      newFlow = JSON.parse(JSON.stringify(cat.flow));
+      const opt = newFlow.nodes.situation.options.find(function(o){ return o.next === 'partialStock'; });
+      if (opt) opt.label = '④一部在庫あり・残りが入荷待ちの場合';
+      if (newFlow.nodes.partialStock) newFlow.nodes.partialStock.question = '④一部在庫あり・残りが入荷待ちの場合';
+    }
     await updateDoc(doc(db, 'categories', 'stock-shortage'), { flow: newFlow });
   }catch(e){
     stockShortageMigrationAttempted = false;
