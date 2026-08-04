@@ -722,25 +722,6 @@ const DEFAULT_CATEGORIES = [
     ]
   },
   {
-    id: 'home-care', name: 'かかりつけ薬剤師・在宅介入患者からの電話', icon: 'home', order: 13, kind: 'flow', isDefault: true,
-    phrases: [],
-    flow: {
-      start: 'greeting',
-      nodes: {
-        greeting: {
-          steps: [
-            'いつもお世話になっております、◯◯薬局の◯◯でございます',
-            '◯◯様でいらっしゃいますか？',
-            '本日はどのようなご用件でしょうか'
-          ],
-          options: [
-            { label: '自分が担当ではない場合', text: '担当の薬剤師に申し伝え、改めてご連絡いたします', next: null }
-          ]
-        }
-      }
-    }
-  },
-  {
     id: 'missed-dose', name: '飲み忘れ・服薬タイミングの確認', icon: 'alarm', order: 14, kind: 'phrases', isDefault: true,
     phrases: [
       { id: 'd14-1', text: '◯◯というお薬について、いついつ頃に飲み忘れられたということですね\nかしこまりました。\n現在、お身体に何か変わったご様子はございますか\n◆回答に時間がかかる場合\nただいま確認いたします。少々お待ちください' }
@@ -824,7 +805,7 @@ const SHORTCUTS = [
 const CATEGORY_GROUPS = [
   { title: '患者様からの問い合わせ', icon: 'inbox', sections: [
     { title: '受付・基本問い合わせ', ids: ['reception-first', 'hours'] },
-    { title: 'お薬・体調のご相談', ids: ['side-effect', 'missed-dose', 'home-care', 'pregnancy', 'otc-interaction'] },
+    { title: 'お薬・体調のご相談', ids: ['side-effect', 'missed-dose', 'pregnancy', 'otc-interaction'] },
     { title: 'ご指摘・困った時の対応', ids: ['complaint', 'hang-up'] }
   ]},
   { title: '患者様への連絡', icon: 'outbox', sections: [
