@@ -701,7 +701,7 @@ const DEFAULT_CATEGORIES = [
     }
   },
   {
-    id: 'stock-shortage', name: '処方薬不足・入荷待ちの連絡', icon: 'package', order: 10, kind: 'flow', isDefault: true,
+    id: 'stock-shortage', name: '処方薬不足時の対応', icon: 'package', order: 10, kind: 'flow', isDefault: true,
     phrases: [],
     flow: {
       start: 'start',
@@ -1015,20 +1015,24 @@ async function maybeMigrateStockShortageFlow(){
   const needsFullMigration = !cat.flow.nodes.closing;
   const situationOpt = cat.flow.nodes.situation && (cat.flow.nodes.situation.options || []).find(function(o){ return o.next === 'partialStock'; });
   const needsLabelFix = !needsFullMigration && situationOpt && situationOpt.label && situationOpt.label.indexOf('④') !== 0;
-  if (!needsFullMigration && !needsLabelFix) return;
+  const needsNameFix = cat.name !== '処方薬不足時の対応';
+  if (!needsFullMigration && !needsLabelFix && !needsNameFix) return;
   stockShortageMigrationAttempted = true;
   try{
     let newFlow;
     if (needsFullMigration){
       const defaultCat = DEFAULT_CATEGORIES.find(function(c){ return c.id === 'stock-shortage'; });
       newFlow = JSON.parse(JSON.stringify(defaultCat.flow));
-    } else {
+    } else if (needsLabelFix){
       newFlow = JSON.parse(JSON.stringify(cat.flow));
       const opt = newFlow.nodes.situation.options.find(function(o){ return o.next === 'partialStock'; });
       if (opt) opt.label = '④一部在庫あり・残りが入荷待ちの場合';
       if (newFlow.nodes.partialStock) newFlow.nodes.partialStock.question = '④一部在庫あり・残りが入荷待ちの場合';
     }
-    await updateDoc(doc(db, 'categories', 'stock-shortage'), { flow: newFlow });
+    const updates = {};
+    if (newFlow) updates.flow = newFlow;
+    if (needsNameFix) updates.name = '処方薬不足時の対応';
+    await updateDoc(doc(db, 'categories', 'stock-shortage'), updates);
   }catch(e){
     stockShortageMigrationAttempted = false;
   }
