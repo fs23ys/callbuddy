@@ -492,12 +492,50 @@ const DEFAULT_BASIC_RULES = [
 
 const DEFAULT_CATEGORIES = [
   {
-    id: 'reception-first', name: '受付一次対応', icon: 'chatDots', order: 1, kind: 'phrases', isDefault: true,
+    id: 'reception-first', name: '受付一次対応', icon: 'chatDots', order: 1, kind: 'flow', isDefault: true,
     phrases: [
-      { id: 'd1-1', text: '【第一声（時間帯別）】\n◆午前中\nおはようございます\n◆10:30以降\nはい、◯◯薬局です\n◆電話に出るのが遅れた場合\n大変お待たせいたしました' },
-      { id: 'd1-2', text: '【用件確認の前に（該当する場合）】\n◆患者の場合\n恐れ入りますが、お名前と生年月日をお伺いしてもよろしいでしょうか\n◆折り返し電話をくれた患者の場合\n折り返しのお電話ありがとうございます。\n◆患者以外の場合\nご用件をお伺いしてもよろしいでしょうか／かしこまりました。' },
-      { id: 'd1-3', text: '【用件確認の流れ】\nご用件をお伺いしてもよろしいでしょうか\n◯◯のお問い合わせですね\n※用件は必ず復唱する\n担当者へ取り次ぐ\n◆かかりつけ薬剤師・在宅介入患者からの電話の場合\n担当の薬剤師に申し伝え、改めてご連絡いたします' }
-    ]
+      { id: 'd1-1', before: true, text: '【第一声（時間帯別）】\n◆午前中\nおはようございます\n◆10:30以降\nはい、◯◯薬局です\n◆電話に出るのが遅れた場合\n大変お待たせいたしました' },
+      { id: 'd1-2', before: true, text: '【用件確認の前に（該当する場合）】\n◆患者の場合\n恐れ入りますが、お名前と生年月日をお伺いしてもよろしいでしょうか\n◆折り返し電話をくれた患者の場合\n折り返しのお電話ありがとうございます。\n◆患者以外の場合\nご用件をお伺いしてもよろしいでしょうか／かしこまりました。' }
+    ],
+    flow: {
+      start: 'confirmMatter',
+      nodes: {
+        confirmMatter: {
+          question: '用件確認の流れ',
+          steps: [
+            'ご用件をお伺いしてもよろしいでしょうか',
+            '◯◯のお問い合わせですね',
+            '※用件は必ず復唱する'
+          ],
+          options: [
+            { label: 'かかりつけ・在宅担当の薬剤師がいる', next: 'hasPharmacist' },
+            { label: '担当の薬剤師がいない場合', text: '担当者へ取り次ぐ', next: null }
+          ]
+        },
+        hasPharmacist: {
+          question: 'かかりつけ・在宅担当の薬剤師がいる場合',
+          options: [
+            { label: '今すぐ担当者につなげる', text: '担当の◯◯（薬剤師名）に変わりますね。', next: null },
+            { label: '担当者が不在', next: 'absentCallback' },
+            { label: '担当者が休み', next: 'dayOffCallback' }
+          ]
+        },
+        absentCallback: {
+          question: '担当者が不在の場合',
+          steps: [
+            '◯◯が戻り次第、折り返しご連絡いたします。',
+            '念のため、お電話番号を伺ってもよろしいでしょうか？'
+          ]
+        },
+        dayOffCallback: {
+          question: '担当者が休みの場合',
+          steps: [
+            'おやすみの場合、後日折り返しご連絡いたします',
+            '念のため、お電話番号を伺ってもよろしいでしょうか'
+          ]
+        }
+      }
+    }
   },
   {
     id: 'hours', name: '営業時間の問い合わせ', icon: 'clock', order: 2, kind: 'phrases', isDefault: true,
