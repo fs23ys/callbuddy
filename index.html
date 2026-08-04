@@ -728,20 +728,30 @@ const DEFAULT_CATEGORIES = [
             'こちらのお薬は、今すぐ必要でしょうか。それとも、入荷まで数日お待ちいただくことは可能でしょうか。'
           ],
           options: [
-            { label: '「今すぐ必要」と言われた場合', text: '至急対応できるかどうか、他店舗・近隣の薬局にも確認いたします。', next: 'closing' },
-            { label: '数日お待ちいただける場合', next: 'closing' }
+            { label: '「今すぐ必要」と言われた場合', text: '至急対応できるかどうか、他店舗・近隣の薬局にも確認いたします。', next: 'deliveryMethod' },
+            { label: '数日お待ちいただける場合', next: 'deliveryMethod' }
           ]
         },
         partialStock: {
           question: '④一部在庫あり・残りが入荷待ちの場合',
           steps: [
-            '本日ご用意する処方薬のうち、◯◯につきましては在庫がございますが、◯◯は在庫がなく、入荷までお時間をいただく状況でございます。',
+            '本日ご用意する処方薬のうち、◯◯につきましては在庫がございますが、◯◯は一部在庫がなく、すべて揃うまでご用意にお時間をいただく状況でございます。',
             '入荷までの目安は、◯日後を予定しております。',
             '在庫がある分だけ先にお渡しすることも、すべて揃ってからまとめてお渡しすることも可能でございますが、どちらがご都合よろしいでしょうか。'
           ],
           options: [
-            { label: '先渡しを希望された場合', text: '在庫がある分だけ、先にお渡しいたします。残りは入荷次第、改めてご連絡（またはお届け）いたします。', next: 'closing' },
-            { label: 'まとめて希望された場合', text: 'かしこまりました。すべて揃いましたら、まとめてお渡しできるよう手配いたします。ご来局のタイミングが決まりましたら、またご連絡ください。', next: 'closing' }
+            { label: '先渡しを希望された場合', text: '在庫がある分だけ、先にお渡しいたします。', next: 'deliveryMethod' },
+            { label: 'まとめて希望された場合', text: 'かしこまりました。すべて揃いましたら、こちらからお電話にてご連絡差し上げます。', next: 'deliveryMethod' }
+          ]
+        },
+        deliveryMethod: {
+          question: 'お渡し方法の確認',
+          steps: [
+            'お渡し方法は、ご来局とお届け、どちらがご都合よろしいでしょうか。'
+          ],
+          options: [
+            { label: 'お届けを希望された場合', text: 'かしこまりました。それでは、ご自宅までお届けいたします。お届け先のご住所に変更がないか、念のため確認させていただいてもよろしいでしょうか。', next: 'closing' },
+            { label: 'ご来局を希望された場合', text: 'かしこまりました。ご来局の際は、受付にてお名前をお伝えいただければと存じます。', next: 'closing' }
           ]
         },
         closing: {
@@ -1012,22 +1022,30 @@ async function maybeMigrateStockShortageFlow(){
   if (!state.loaded) return;
   const cat = state.categories.find(function(c){ return c.id === 'stock-shortage'; });
   if (!cat || !cat.flow || !cat.flow.nodes) return;
+  const defaultCat = DEFAULT_CATEGORIES.find(function(c){ return c.id === 'stock-shortage'; });
   const needsFullMigration = !cat.flow.nodes.closing;
   const situationOpt = cat.flow.nodes.situation && (cat.flow.nodes.situation.options || []).find(function(o){ return o.next === 'partialStock'; });
   const needsLabelFix = !needsFullMigration && situationOpt && situationOpt.label && situationOpt.label.indexOf('④') !== 0;
   const needsNameFix = cat.name !== '処方薬不足時の対応';
-  if (!needsFullMigration && !needsLabelFix && !needsNameFix) return;
+  const needsDeliveryMethod = !needsFullMigration && !cat.flow.nodes.deliveryMethod;
+  if (!needsFullMigration && !needsLabelFix && !needsNameFix && !needsDeliveryMethod) return;
   stockShortageMigrationAttempted = true;
   try{
-    let newFlow;
+    let newFlow = null;
     if (needsFullMigration){
-      const defaultCat = DEFAULT_CATEGORIES.find(function(c){ return c.id === 'stock-shortage'; });
       newFlow = JSON.parse(JSON.stringify(defaultCat.flow));
-    } else if (needsLabelFix){
+    } else if (needsLabelFix || needsDeliveryMethod){
       newFlow = JSON.parse(JSON.stringify(cat.flow));
-      const opt = newFlow.nodes.situation.options.find(function(o){ return o.next === 'partialStock'; });
-      if (opt) opt.label = '④一部在庫あり・残りが入荷待ちの場合';
-      if (newFlow.nodes.partialStock) newFlow.nodes.partialStock.question = '④一部在庫あり・残りが入荷待ちの場合';
+      if (needsLabelFix){
+        const opt = newFlow.nodes.situation.options.find(function(o){ return o.next === 'partialStock'; });
+        if (opt) opt.label = '④一部在庫あり・残りが入荷待ちの場合';
+        if (newFlow.nodes.partialStock) newFlow.nodes.partialStock.question = '④一部在庫あり・残りが入荷待ちの場合';
+      }
+      if (needsDeliveryMethod){
+        newFlow.nodes.urgency = JSON.parse(JSON.stringify(defaultCat.flow.nodes.urgency));
+        newFlow.nodes.partialStock = JSON.parse(JSON.stringify(defaultCat.flow.nodes.partialStock));
+        newFlow.nodes.deliveryMethod = JSON.parse(JSON.stringify(defaultCat.flow.nodes.deliveryMethod));
+      }
     }
     const updates = {};
     if (newFlow) updates.flow = newFlow;
