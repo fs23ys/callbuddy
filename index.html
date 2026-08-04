@@ -704,50 +704,52 @@ const DEFAULT_CATEGORIES = [
     id: 'stock-shortage', name: '処方薬不足・入荷待ちの連絡', icon: 'package', order: 10, kind: 'flow', isDefault: true,
     phrases: [],
     flow: {
-      start: 'situation',
+      start: 'start',
       nodes: {
-        situation: {
-          question: 'どの状況ですか？',
+        start: {
+          question: 'ご連絡の経緯は？',
           options: [
-            { label: '入荷待ちのご連絡', next: 'restock' },
-            { label: '一部在庫あり・残り入荷待ちのご連絡', next: 'partialStock' },
-            { label: '流通不安定の場合', next: 'unstable' },
-            { label: '在庫なし・取り寄せ対応', next: 'noStock' }
+            { label: '処方箋を持参して来局された場合', text: '本日はご来局いただき、誠にありがとうございます。', next: 'situation' },
+            { label: 'Pocket Musubi等で処方箋を送信された場合', text: '本日は処方箋をお送りいただき、誠にありがとうございます。', next: 'situation' }
           ]
         },
-        restock: {
-          question: '入荷待ちのご連絡',
+        situation: {
+          question: '在庫の状況は？',
+          options: [
+            { label: '①在庫なし・取り寄せ対応（卸から入手可能・入荷待ちのみ）', text: 'あいにく、現在こちらの店舗には◯◯というお薬の在庫がございません。ただいま、他店舗または卸業者より手配が可能かどうか確認しております。', next: 'urgency' },
+            { label: '②流通不安定・入手困難（卸からの入手に時間がかかる）', text: '現在、◯◯というお薬は流通が不安定な状況にあり、卸業者からもすぐにはご用意が難しい状況です。', next: 'urgency' },
+            { label: '③卸からも入手不可能（代替薬の相談が必要）', text: '現在、◯◯というお薬は卸業者からの入手が難しい状況でございます。\n恐れ入りますが、代替のお薬についてご相談させていただきたく、処方医と相談のうえ、改めてご連絡させていただいてもよろしいでしょうか。', next: 'closing' },
+            { label: '一部在庫あり・残りが入荷待ちの場合', next: 'partialStock' }
+          ]
+        },
+        urgency: {
+          question: '緊急度の確認',
           steps: [
-            '処方箋をお持ちいただきありがとうございます。',
-            '現在、◯◯が当薬局にて一部在庫切れとなっております。',
-            '（明日の昼頃）には入荷し、すべて揃う予定です。',
-            'お薬のお渡し準備が整いましたら、改めてご連絡（または通知）いたします。',
-            'ご来局の際は、処方箋の『原本』とお薬手帳を忘れずにお持ちください'
+            'こちらのお薬は、今すぐ必要でしょうか。それとも、入荷まで数日お待ちいただくことは可能でしょうか。'
+          ],
+          options: [
+            { label: '「今すぐ必要」と言われた場合', text: '至急対応できるかどうか、他店舗・近隣の薬局にも確認いたします。', next: 'closing' },
+            { label: '数日お待ちいただける場合', next: 'closing' }
           ]
         },
         partialStock: {
-          question: '一部在庫あり・残り入荷待ちのご連絡',
+          question: '一部在庫あり・残りが入荷待ちの場合',
           steps: [
-            '本日ご用意する処方薬のうち、◯◯につきましては在庫がございますが、◯◯は在庫がなく、入荷までお時間をいただく状況です。',
-            '入荷までの目安は（◯日後）となっております。'
+            '本日ご用意する処方薬のうち、◯◯につきましては在庫がございますが、◯◯は在庫がなく、入荷までお時間をいただく状況でございます。',
+            '入荷までの目安は、◯日後を予定しております。',
+            '在庫がある分だけ先にお渡しすることも、すべて揃ってからまとめてお渡しすることも可能でございますが、どちらがご都合よろしいでしょうか。'
           ],
           options: [
-            { label: '在庫がある分を先にお渡しする場合', text: '在庫がある分だけ、先にお渡しすることは可能です。残りは入荷次第、改めてご連絡（またはお届け）いたします。', next: null },
-            { label: 'すべて揃ってからまとめてお渡しする場合', text: 'すべて揃ってからまとめてお渡しすることも可能です。ご来局のタイミングが決まりましたら、またご連絡ください。', next: null }
+            { label: '先渡しを希望された場合', text: '在庫がある分だけ、先にお渡しいたします。残りは入荷次第、改めてご連絡（またはお届け）いたします。', next: 'closing' },
+            { label: 'まとめて希望された場合', text: 'かしこまりました。すべて揃いましたら、まとめてお渡しできるよう手配いたします。ご来局のタイミングが決まりましたら、またご連絡ください。', next: 'closing' }
           ]
         },
-        unstable: {
-          question: '流通不安定の場合',
+        closing: {
+          question: '共通クロージング',
           steps: [
-            '現在、流通が不安定なため、◯◯がすぐにご用意できない状況です（卸からの入手が難しい状況です）',
-            'お薬は今すぐ必要でしょうか。それとも、入荷まで数日お待ちいただくことは可能でしょうか'
-          ]
-        },
-        noStock: {
-          question: '在庫なし・取り寄せ対応',
-          steps: [
-            'あいにく現在こちらの店舗に在庫がございません。他店舗や卸から入手可能か、入荷できる時間を確認いたします',
-            '本日◯時までにお手配（または折り返しのご連絡）が可能かお調べいたします'
+            '最短でいつご用意できるか、確認にもう少しお時間をいただけますでしょうか。',
+            '分かり次第、改めてこちらからご連絡差し上げます。',
+            'この度はご不便をおかけし、誠に申し訳ございません。'
           ]
         }
       }
@@ -1009,30 +1011,12 @@ async function maybeMigrateStockShortageFlow(){
   if (!authReady || !state.currentUser) return;
   if (!state.loaded) return;
   const cat = state.categories.find(function(c){ return c.id === 'stock-shortage'; });
-  if (!cat || !cat.flow || !cat.flow.nodes || !cat.flow.nodes.situation) return;
-  const hasNode = !!cat.flow.nodes.partialStock;
-  const hasOption = (cat.flow.nodes.situation.options || []).some(function(o){ return o.next === 'partialStock'; });
-  if (hasNode && hasOption) return;
+  if (!cat || !cat.flow || !cat.flow.nodes) return;
+  if (cat.flow.nodes.closing) return;
   stockShortageMigrationAttempted = true;
   try{
-    const newFlow = JSON.parse(JSON.stringify(cat.flow));
-    if (!newFlow.nodes.situation.options.some(function(o){ return o.next === 'partialStock'; })){
-      const idx = newFlow.nodes.situation.options.findIndex(function(o){ return o.next === 'restock'; });
-      newFlow.nodes.situation.options.splice(idx === -1 ? 0 : idx + 1, 0, { label: '一部在庫あり・残り入荷待ちのご連絡', next: 'partialStock' });
-    }
-    if (!newFlow.nodes.partialStock){
-      newFlow.nodes.partialStock = {
-        question: '一部在庫あり・残り入荷待ちのご連絡',
-        steps: [
-          '本日ご用意する処方薬のうち、◯◯につきましては在庫がございますが、◯◯は在庫がなく、入荷までお時間をいただく状況です。',
-          '入荷までの目安は（◯日後）となっております。'
-        ],
-        options: [
-          { label: '在庫がある分を先にお渡しする場合', text: '在庫がある分だけ、先にお渡しすることは可能です。残りは入荷次第、改めてご連絡（またはお届け）いたします。', next: null },
-          { label: 'すべて揃ってからまとめてお渡しする場合', text: 'すべて揃ってからまとめてお渡しすることも可能です。ご来局のタイミングが決まりましたら、またご連絡ください。', next: null }
-        ]
-      };
-    }
+    const defaultCat = DEFAULT_CATEGORIES.find(function(c){ return c.id === 'stock-shortage'; });
+    const newFlow = JSON.parse(JSON.stringify(defaultCat.flow));
     await updateDoc(doc(db, 'categories', 'stock-shortage'), { flow: newFlow });
   }catch(e){
     stockShortageMigrationAttempted = false;
