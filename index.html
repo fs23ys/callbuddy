@@ -494,7 +494,7 @@ const DEFAULT_CATEGORIES = [
   {
     id: 'reception-first', name: '受付一次対応', icon: 'chatDots', order: 1, kind: 'flow', isDefault: true,
     phrases: [
-      { id: 'd1-1', before: true, text: '【第一声（時間帯別）】\n◆午前中\nおはようございます\n◆10:30以降\nはい、◯◯薬局です\n◆電話に出るのが遅れた場合\n大変お待たせいたしました' },
+      { id: 'd1-1', before: true, text: '【第一声（時間帯別）】\n◆午前中\nおはようございます。◯◯薬局です。\n◆10:30以降\nはい、◯◯薬局です。\n◆電話に出るのが遅れた場合\n大変お待たせいたしました。' },
       { id: 'd1-2', before: true, text: '【用件確認の前に（該当する場合）】\n◆患者の場合\n恐れ入りますが、お名前と生年月日をお伺いしてもよろしいでしょうか\n◆折り返し電話をくれた患者の場合\n折り返しのお電話ありがとうございます。\n◆患者以外の場合\nご用件をお伺いしてもよろしいでしょうか／かしこまりました。' }
     ],
     flow: {
@@ -503,8 +503,8 @@ const DEFAULT_CATEGORIES = [
         confirmMatter: {
           question: '用件確認の流れ',
           steps: [
-            'ご用件をお伺いしてもよろしいでしょうか',
-            '◯◯のお問い合わせですね',
+            'ご用件をお伺いしてもよろしいでしょうか？',
+            '◯◯のお問い合わせですね。',
             '※用件は必ず復唱する'
           ],
           options: [
@@ -522,15 +522,13 @@ const DEFAULT_CATEGORIES = [
         absentCallback: {
           question: '担当者が不在の場合',
           steps: [
-            '◯◯が戻り次第、折り返しご連絡いたします。',
-            '念のため、お電話番号を伺ってもよろしいでしょうか？'
+            '参照：不在時対応マニュアル'
           ]
         },
         dayOffCallback: {
           question: '担当者が休みの場合',
           steps: [
-            'おやすみの場合、後日折り返しご連絡いたします',
-            '念のため、お電話番号を伺ってもよろしいでしょうか'
+            '参照：不在時対応マニュアル'
           ]
         }
       }
@@ -662,8 +660,7 @@ const DEFAULT_CATEGORIES = [
             'ご用件をうかがってもよろしいでしょうか'
           ],
           options: [
-            { label: 'かかりつけ・在宅担当の薬剤師がいる', next: 'hasPharmacist' },
-            { label: '担当の薬剤師がいない（自分で対応）', next: 'noPharmacist' }
+            { label: 'かかりつけ・在宅担当の薬剤師がいる', next: 'hasPharmacist' }
           ]
         },
         hasPharmacist: {
@@ -1933,7 +1930,7 @@ async function updatePhrase(categoryId, phraseId, newText){
   const cat = findCategory(categoryId);
   if (!cat) return false;
   const newPhrases = (cat.phrases || []).map(function(p){
-    return p.id === phraseId ? { id: p.id, text: newText } : p;
+    return p.id === phraseId ? Object.assign({}, p, { text: newText }) : p;
   });
   try{
     await updateDoc(doc(db, 'categories', categoryId), { phrases: newPhrases });
