@@ -805,7 +805,7 @@ const DEFAULT_CATEGORIES = [
     ]
   },
   {
-    id: 'wholesale-request', name: '他薬局への分譲依頼', icon: 'package', order: 18, kind: 'phrases', isDefault: true,
+    id: 'wholesale-request', name: '分譲依頼', icon: 'package', order: 18, kind: 'phrases', isDefault: true,
     phrases: [
       { id: 'd18-1', text: 'お世話になっております。◯◯薬局の◯◯と申します。\n恐れ入りますが、◯◯というお薬を少量分けていただくことは可能でしょうか\n数量は◯◯個ほど不足しておりまして、お手数をおかけしますがご検討いただけますと幸いです' }
     ]
@@ -901,6 +901,7 @@ const state = {
 };
 let seedAttempted = false;
 let stockShortageMigrationAttempted = false;
+let categoryNameMigrationAttempted = false;
 let basicRulesSeedAttempted = false;
 let db = null;
 let auth = null;
@@ -977,6 +978,7 @@ function boot(){
     state.loaded = true;
     maybeSeed();
     maybeMigrateStockShortageFlow();
+    maybeMigrateCategoryNames();
     renderCategoryGrid();
     if (state.openCategoryId) renderCategoryDetail(state.openCategoryId);
   }, function(err){
@@ -1026,13 +1028,12 @@ async function maybeMigrateStockShortageFlow(){
   const needsFullMigration = !cat.flow.nodes.closing;
   const situationOpt = cat.flow.nodes.situation && (cat.flow.nodes.situation.options || []).find(function(o){ return o.next === 'partialStock'; });
   const needsLabelFix = !needsFullMigration && situationOpt && situationOpt.label && situationOpt.label.indexOf('④') !== 0;
-  const needsNameFix = cat.name !== '処方薬不足時の対応';
   const needsDeliveryMethod = !needsFullMigration && !cat.flow.nodes.deliveryMethod;
   const visitOpt = !needsFullMigration && !needsDeliveryMethod && cat.flow.nodes.deliveryMethod &&
     (cat.flow.nodes.deliveryMethod.options || []).find(function(o){ return o.label === 'ご来局を希望された場合'; });
   const newVisitText = 'かしこまりました。ご来局の際は、受付にてお名前をお伝えいただき、不足票をお持ちいただければと存じます。';
   const needsVisitTextFix = visitOpt && visitOpt.text !== newVisitText;
-  if (!needsFullMigration && !needsLabelFix && !needsNameFix && !needsDeliveryMethod && !needsVisitTextFix) return;
+  if (!needsFullMigration && !needsLabelFix && !needsDeliveryMethod && !needsVisitTextFix) return;
   stockShortageMigrationAttempted = true;
   try{
     let newFlow = null;
@@ -1055,12 +1056,31 @@ async function maybeMigrateStockShortageFlow(){
         if (opt) opt.text = newVisitText;
       }
     }
-    const updates = {};
-    if (newFlow) updates.flow = newFlow;
-    if (needsNameFix) updates.name = '処方薬不足時の対応';
-    await updateDoc(doc(db, 'categories', 'stock-shortage'), updates);
+    if (newFlow) await updateDoc(doc(db, 'categories', 'stock-shortage'), { flow: newFlow });
   }catch(e){
     stockShortageMigrationAttempted = false;
+  }
+}
+
+async function maybeMigrateCategoryNames(){
+  if (categoryNameMigrationAttempted) return;
+  if (!authReady || !state.currentUser) return;
+  if (!state.loaded) return;
+  const mismatches = state.categories.filter(function(c){
+    const def = DEFAULT_CATEGORIES.find(function(d){ return d.id === c.id; });
+    return def && def.name !== c.name;
+  });
+  if (!mismatches.length) return;
+  categoryNameMigrationAttempted = true;
+  try{
+    const batch = writeBatch(db);
+    mismatches.forEach(function(c){
+      const def = DEFAULT_CATEGORIES.find(function(d){ return d.id === c.id; });
+      batch.update(doc(db, 'categories', c.id), { name: def.name });
+    });
+    await batch.commit();
+  }catch(e){
+    categoryNameMigrationAttempted = false;
   }
 }
 
