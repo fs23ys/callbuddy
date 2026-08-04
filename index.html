@@ -1337,22 +1337,10 @@ function renderStaffNotes(notes){
   return '<div class="phrase-note">' + notes.map(function(n){ return '📎 ' + h(n); }).join('<br>') + '</div>';
 }
 
-function renderPhraseBody(cat, rawText){
-  const text = renderPhraseText(cat, rawText);
-  const lines = text.split('\n');
-  let heading = '';
-  let items = lines;
-  if (lines.length > 1 && /^【.*】$/.test(lines[0].trim())){
-    heading = lines[0].trim();
-    items = lines.slice(1);
-  }
-  const extracted = extractStaffNotes(items);
-  items = extracted.items;
-  const notes = extracted.notes;
+function renderItemsBlock(items){
   const hasBranches = items.some(function(l){ return l.trim().indexOf('◆') === 0; });
   const isChoice = !hasBranches && items.length > 0 && items[0].trim().indexOf('・') === 0;
   let html = '';
-  if (heading) html += '<div class="phrase-heading">' + h(heading) + '</div>';
   if (hasBranches){
     const preamble = [];
     const branches = [];
@@ -1389,6 +1377,24 @@ function renderPhraseBody(cat, rawText){
   } else {
     html += h(items[0] || '');
   }
+  return html;
+}
+
+function renderPhraseBody(cat, rawText){
+  const text = renderPhraseText(cat, rawText);
+  const lines = text.split('\n');
+  let heading = '';
+  let items = lines;
+  if (lines.length > 1 && /^【.*】$/.test(lines[0].trim())){
+    heading = lines[0].trim();
+    items = lines.slice(1);
+  }
+  const extracted = extractStaffNotes(items);
+  items = extracted.items;
+  const notes = extracted.notes;
+  let html = '';
+  if (heading) html += '<div class="phrase-heading">' + h(heading) + '</div>';
+  html += renderItemsBlock(items);
   html += renderStaffNotes(notes);
   return html;
 }
@@ -1760,7 +1766,12 @@ function renderFlow(cat){
     } else {
       if (node.steps){
         const extracted = extractStaffNotes(node.steps);
-        html += '<ol class="flow-steps">' + extracted.items.map(function(s, idx){ return '<li><span class="step-num">' + stepNum(idx) + '</span><span class="step-txt">' + h(s) + '</span></li>'; }).join('') + '</ol>';
+        const stepsHaveBranches = extracted.items.some(function(l){ return l.trim().indexOf('◆') === 0; });
+        if (extracted.items.length === 1 && !stepsHaveBranches){
+          html += '<div class="flow-phrase">' + h(extracted.items[0]) + '</div>';
+        } else if (extracted.items.length > 0){
+          html += renderItemsBlock(extracted.items);
+        }
         html += renderStaffNotes(extracted.notes);
       }
       if (node.options){
