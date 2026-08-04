@@ -717,10 +717,9 @@ const DEFAULT_CATEGORIES = [
         restock: {
           question: '入荷待ちのご連絡',
           steps: [
-            '処方箋のご送信ありがとうございます。',
-            '現在、◯◯が一部在庫切れとなっております。',
-            '明日の昼頃には入荷し、すべて揃う予定です。',
-            '※時期は状況に応じて書き換えてください',
+            '処方箋をお持ちいただきありがとうございます。',
+            '現在、◯◯が当薬局にて一部在庫切れとなっております。',
+            '（明日の昼頃）には入荷し、すべて揃う予定です。',
             'お薬のお渡し準備が整いましたら、改めてご連絡（または通知）いたします。',
             'ご来局の際は、処方箋の『原本』とお薬手帳を忘れずにお持ちください'
           ]
@@ -846,7 +845,7 @@ const CATEGORY_GROUPS = [
     { title: 'ご連絡・お知らせ', ids: ['outbound-call'] },
     { title: '手続き・在庫確認', ids: ['stock-shortage', 'prescription-expiry'] },
     { title: 'トラブル・お詫び対応', ids: ['apology', 'inventory-discrepancy'] },
-    { title: '折り返し対応', ids: ['message'] }
+    { title: '伝言・折り返し対応', ids: ['message'] }
   ]},
   { title: '疑義照会', icon: 'activity', sections: [
     { title: null, ids: ['giji-shokai'] }
@@ -1743,10 +1742,10 @@ function renderFlow(cat){
   if (isEditing){
     html += renderFlowEditForm(node);
   } else {
-    if (node.question){
+    if (!fstate.leaf && node.question){
       html += '<div class="flow-question">' + h(node.question) + '</div>';
     }
-    if (node.note){
+    if (!fstate.leaf && node.note){
       html += '<div class="flow-note">' + h(node.note) + '</div>';
     }
 
