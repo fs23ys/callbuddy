@@ -751,7 +751,7 @@ const DEFAULT_CATEGORIES = [
           ],
           options: [
             { label: 'お届けを希望された場合', text: 'かしこまりました。それでは、ご自宅までお届けいたします。お届け先のご住所に変更がないか、念のため確認させていただいてもよろしいでしょうか。', next: 'closing' },
-            { label: 'ご来局を希望された場合', text: 'かしこまりました。ご来局の際は、受付にてお名前をお伝えいただければと存じます。', next: 'closing' }
+            { label: 'ご来局を希望された場合', text: 'かしこまりました。ご来局の際は、受付にてお名前をお伝えいただき、不足票をお持ちいただければと存じます。', next: 'closing' }
           ]
         },
         closing: {
@@ -1028,13 +1028,17 @@ async function maybeMigrateStockShortageFlow(){
   const needsLabelFix = !needsFullMigration && situationOpt && situationOpt.label && situationOpt.label.indexOf('④') !== 0;
   const needsNameFix = cat.name !== '処方薬不足時の対応';
   const needsDeliveryMethod = !needsFullMigration && !cat.flow.nodes.deliveryMethod;
-  if (!needsFullMigration && !needsLabelFix && !needsNameFix && !needsDeliveryMethod) return;
+  const visitOpt = !needsFullMigration && !needsDeliveryMethod && cat.flow.nodes.deliveryMethod &&
+    (cat.flow.nodes.deliveryMethod.options || []).find(function(o){ return o.label === 'ご来局を希望された場合'; });
+  const newVisitText = 'かしこまりました。ご来局の際は、受付にてお名前をお伝えいただき、不足票をお持ちいただければと存じます。';
+  const needsVisitTextFix = visitOpt && visitOpt.text !== newVisitText;
+  if (!needsFullMigration && !needsLabelFix && !needsNameFix && !needsDeliveryMethod && !needsVisitTextFix) return;
   stockShortageMigrationAttempted = true;
   try{
     let newFlow = null;
     if (needsFullMigration){
       newFlow = JSON.parse(JSON.stringify(defaultCat.flow));
-    } else if (needsLabelFix || needsDeliveryMethod){
+    } else if (needsLabelFix || needsDeliveryMethod || needsVisitTextFix){
       newFlow = JSON.parse(JSON.stringify(cat.flow));
       if (needsLabelFix){
         const opt = newFlow.nodes.situation.options.find(function(o){ return o.next === 'partialStock'; });
@@ -1045,6 +1049,10 @@ async function maybeMigrateStockShortageFlow(){
         newFlow.nodes.urgency = JSON.parse(JSON.stringify(defaultCat.flow.nodes.urgency));
         newFlow.nodes.partialStock = JSON.parse(JSON.stringify(defaultCat.flow.nodes.partialStock));
         newFlow.nodes.deliveryMethod = JSON.parse(JSON.stringify(defaultCat.flow.nodes.deliveryMethod));
+      }
+      if (needsVisitTextFix){
+        const opt = newFlow.nodes.deliveryMethod.options.find(function(o){ return o.label === 'ご来局を希望された場合'; });
+        if (opt) opt.text = newVisitText;
       }
     }
     const updates = {};
